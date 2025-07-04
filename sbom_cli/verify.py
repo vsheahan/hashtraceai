@@ -1,0 +1,1 @@
+# Logic for SBOM verification will go here
