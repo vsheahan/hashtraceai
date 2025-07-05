@@ -1,17 +1,18 @@
 # HashTraceAI
 
-HashTraceAI is a lightweight Python-based tool to generate and verify a Software Bill of Materials (SBOM) for AI/ML models. It ensures the integrity of model artifacts by creating cryptographic fingerprints (SHA-256) of each file and verifying them against a known-good SBOM file.
+HashTraceAI is a lightweight tool for generating and verifying Software Bill of Materials (SBOMs) for machine learning models. It calculates cryptographic hashes of files in a model directory, produces a JSON SBOM, and verifies those hashes to detect drift, tampering, or unintended changes.
 
 ## Features
 
-- Generates a JSON-formatted SBOM for any model directory
-- Verifies the current state of model files against a stored SBOM
-- Highlights missing or tampered files using SHA-256 hash comparison
-- Outputs verification results in colorized terminal output or JSON format
+- Generates a file-level SBOM from any directory
+- Uses SHA-256 for secure hashing
+- Produces portable JSON output
+- Verifies model files against a previously generated SBOM
+- CLI output supports JSON or colorized text format
 
 ## Installation
 
-Clone the repository and install the requirements:
+Clone the repository and install required dependencies:
 
 ```bash
 git clone https://github.com/vsheahan/hashtraceai.git
@@ -19,71 +20,40 @@ cd hashtraceai
 pip install -r requirements.txt
 ```
 
-## Usage
+## Basic Usage
 
-### 1. Prepare Your Model
-
-Make sure your model files are in a directory, for example:
-
-```
-my_model/
-├── config.json
-├── model.pt
-└── tokenizer.json
-```
-
-### 2. Generate an SBOM
-
-Use the `generate` command to create an SBOM from your model directory:
+### 1. Generate SBOM
 
 ```bash
-python3 cli.py generate ./my_model --created-by "TARS" --out sbom.json
+python3 cli.py generate ./your-model-dir --created-by "TARS" --out sbom.json
 ```
 
-- `./my_model` is the path to your model directory
-- `--created-by` is metadata for the SBOM (your name, org, or alias)
-- `--out` is the destination file for the SBOM (default is `sbom.json`)
+This will create a `sbom.json` file containing hashes of all files in `./your-model-dir`.
 
-### 3. Verify an SBOM
-
-To verify the integrity of a model directory using a saved SBOM:
+### 2. Verify SBOM
 
 ```bash
-python3 cli.py verify ./my_model --sbom sbom.json --format text
+python3 cli.py verify ./your-model-dir --sbom sbom.json --format text
 ```
 
-- `--sbom` is the path to your SBOM file (default is `sbom.json`)
-- `--format` can be `text` (colorized CLI) or `json` (machine-readable)
+Use `--format json` to get structured output suitable for pipelines or logs.
 
-### Example Output (text format)
+## Use Case Examples
 
-```
-All files verified successfully.
-```
+| Scenario                             | Command                                                                 |
+|--------------------------------------|-------------------------------------------------------------------------|
+| Generate SBOM for a model folder     | `python3 cli.py generate ./model --created-by "TARS" --out sbom.json`   |
+| Verify model files from SBOM         | `python3 cli.py verify ./model --sbom sbom.json --format text`          |
+| JSON output for CI/CD integration    | `python3 cli.py verify ./model --sbom sbom.json --format json`          |
+| Custom SBOM filename                 | `python3 cli.py generate ./model --created-by "TARS" --out model.sbom`  |
 
-Or if mismatches are found:
+## Requirements
 
-```
-Verification failed:
-  [MISSING] tokenizer.json
-  [MISMATCH] model.pt
-```
-
-### Example Output (JSON format)
-
-```json
-{
-  "result": "fail",
-  "mismatches": [
-    { "type": "missing", "file": "tokenizer.json" },
-    { "type": "hash_mismatch", "file": "model.pt" }
-  ]
-}
-```
+- Python 3.8 or newer
 
 ## Output
 
-The SBOM is a JSON file with metadata and file checksums. Example:
+The generated SBOM is a JSON file with the following structure:
 
 ```json
 {
@@ -99,12 +69,6 @@ The SBOM is a JSON file with metadata and file checksums. Example:
 }
 ```
 
-## Requirements
-
-- Python 3.8+
-- `argparse`
-- Standard Library only (no external dependencies)
-
 ## License
 
-MIT License. See `LICENSE` for details.
+This project is licensed under the MIT License.
