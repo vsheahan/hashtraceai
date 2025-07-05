@@ -105,3 +105,5 @@ def run(
             f.write(signature)
 
         print(f"\033[92mSignature written to '{sig_file}'\033[0m")
+
+
