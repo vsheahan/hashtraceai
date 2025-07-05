@@ -4,6 +4,8 @@
 
 HashTraceAI is a lightweight tool for generating and verifying file-level manifests for machine learning models. It calculates cryptographic hashes of files in a model directory, produces a JSON manifest, and verifies those hashes to detect drift, tampering, or unintended changes.
 
+This tool is designed with security teams in mind. While traditional SBOMs cover build dependencies, they often overlook the binary model artifacts deployed in production. HashTraceAI enables teams to track the integrity of model files across environments, detect unauthorized modifications, and support auditability and provenance validation in ML pipelines.
+
 ## Features
 
 - Generates a file-level manifest from any directory  
