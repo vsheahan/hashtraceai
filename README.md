@@ -10,12 +10,23 @@ HashTraceAI helps security teams verify the integrity and provenance of machine 
 
 ## Features
 
-- Generates a file-level manifest from any directory
+- Generates a file-level manifest from any directory or Hugging Face model
 - Uses SHA-256 for secure hashing
-- Produces portable JSON output
+- Supports RSA-signed manifests for tamper detection
 - Verifies model files against a previously generated manifest
-- Supports Hugging Face model download and manifest generation
 - CLI output supports JSON or colorized text format
+- Produces portable JSON output suitable for automation
+
+## Strong Alignment with Key ISO 42001 Clauses
+
+HashTraceAI supports secure MLOps practices aligned with ISO/IEC 42001:2023 by enabling traceability, integrity verification, and manifest-based artifact provenance checks. These features contribute to:
+
+- **Clause 5.3, Roles and responsibilities**: Supports clear responsibility for model integrity.
+- **Clause 6.1.2, Risk treatment plan**: Provides tools for monitoring changes and mitigating tampering risk.
+- **Clause 8.2.1, Data and AI system integrity**: Ensures that models used in production are unchanged from those validated or reviewed.
+- **Clause 8.3, Operational planning and control**: Adds traceability and reproducibility controls in the ML supply chain.
+
+> Disclaimer: While HashTraceAI aligns with ISO 42001 goals, using it alone does not guarantee compliance. Organizations must assess it within their full AI management system.
 
 ## Installation
 
@@ -35,8 +46,6 @@ pip install -r requirements.txt
 python3 cli.py generate ./your-model-dir --created-by "TARS" --out manifest.json
 ```
 
-This will create a `manifest.json` file containing hashes of all files in `./your-model-dir`.
-
 ### 2. Verify Manifest
 
 ```bash
@@ -51,30 +60,35 @@ Use `--format json` to get structured output suitable for pipelines or logs.
 python3 cli.py generate --hf-id "bert-base-uncased" --created-by "TARS" --out manifest.json
 ```
 
-This downloads the Hugging Face model locally, computes file hashes, and outputs `manifest.json`.
-
-### 4. Verify a Hugging Face Snapshot
+### 4. Generate and Sign Manifest
 
 ```bash
-python3 cli.py verify ~/.cache/huggingface/hub/models--bert-base-uncased/snapshots/<snapshot-id> --manifest manifest.json --format text
+python3 cli.py generate ./your-model-dir --created-by "TARS" --out manifest.json --sign private.pem
 ```
 
-This command checks that the local cached Hugging Face model files match the manifest you generated earlier.
+This will output both `manifest.json` and a digital signature file `manifest.json.sig` using the specified RSA private key. The public key is required to verify signature validity.
 
 ## Use Case Examples
 
-| Scenario                             | Command                                                                                     | Purpose                                                |
-|--------------------------------------|---------------------------------------------------------------------------------------------|--------------------------------------------------------|
-| Generate manifest for local model    | `python3 cli.py generate ./model --created-by "TARS" --out manifest.json`                   | Hash all files in model folder                         |
-| Verify model files from manifest     | `python3 cli.py verify ./model --manifest manifest.json --format text`                      | Confirm no drift or tampering                          |
-| JSON output for CI/CD integration    | `python3 cli.py verify ./model --manifest manifest.json --format json`                      | Structured log output for automation                   |
-| Generate manifest from Hugging Face  | `python3 cli.py generate --hf-id "bert-base-uncased" --created-by "TARS" --out manifest.json` | Securely ingest and verify third-party model files     |
-| Verify Hugging Face snapshot         | `python3 cli.py verify ~/.cache/.../snapshots/<id> --manifest manifest.json --format text`  | Re-check cached remote models for integrity            |
-| Custom manifest filename             | `python3 cli.py generate ./model --created-by "TARS" --out model.manifest`                  | Store under project-specific naming conventions        |
+| Scenario                              | Command                                                                                          | Purpose                                                |
+|---------------------------------------|--------------------------------------------------------------------------------------------------|--------------------------------------------------------|
+| Generate manifest for local model     | `python3 cli.py generate ./model --created-by "TARS" --out manifest.json`                        | Hash all files in model folder                         |
+| Verify model files from manifest      | `python3 cli.py verify ./model --manifest manifest.json --format text`                           | Confirm no drift or tampering                          |
+| JSON output for CI/CD integration     | `python3 cli.py verify ./model --manifest manifest.json --format json`                           | Structured log output for automation                   |
+| Generate manifest from Hugging Face   | `python3 cli.py generate --hf-id "bert-base-uncased" --created-by "TARS" --out manifest.json`    | Securely ingest and verify third-party model files     |
+| Generate and sign a manifest          | `python3 cli.py generate ./model --created-by "TARS" --out manifest.json --sign private.pem`     | Prove authenticity with a digital signature            |
 
 ## Requirements
 
 - Python 3.8 or newer
+- `huggingface_hub` (for Hugging Face model downloads)
+- `cryptography` (for RSA signing)
+
+Install optional signing support:
+
+```bash
+pip install cryptography
+```
 
 ## Output
 
@@ -94,22 +108,7 @@ The generated manifest is a JSON file with the following structure:
 }
 ```
 
-## Standards Alignment
-
-HashTraceAI supports AI model integrity and provenance assurance in ways that align with several key clauses of ISO/IEC 42001:2023 (AI Management System Standard). It can serve as a technical control in AI governance programs focused on traceability, tamper detection, and secure model deployment.
-
-### Strong Alignment with Key ISO 42001 Clauses
-
-| ISO 42001 Clause                              | Alignment                                                                 |
-|-----------------------------------------------|---------------------------------------------------------------------------|
-| **6.1.2 Risk Assessment and Treatment**        | Detects and mitigates risks of model drift, tampering, or corruption.     |
-| **8.4.2 Integrity of AI Artifacts**            | Verifies cryptographic hashes of files to ensure model integrity.         |
-| **8.4.3 Provenance and Lifecycle Management**  | Adds traceable metadata to manifests for model version tracking.          |
-| **8.5.2 Transparency of AI Systems**           | Provides visibility into model contents through JSON manifests.           |
-| **8.6.1 Secure AI Development and Deployment** | Supports secure ingestion and deployment of local and third-party models. |
-| **9.1 Monitoring and Measurement**             | Enables audit-friendly verification with machine-readable output.         |
-
-> **Disclaimer:** While HashTraceAI supports several technical practices aligned with ISO/IEC 42001, full compliance requires additional organizational policies, governance frameworks, and risk management processes beyond the scope of this tool.
+If `--sign` is used, a `manifest.json.sig` file is created. It can be verified using the associated public key.
 
 ## License
 
