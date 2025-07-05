@@ -10,3 +10,4 @@ sbom.json
 mymodel/
 **/models/**
 **/.cache/**
+test.json
