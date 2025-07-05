@@ -10,8 +10,8 @@ def hash_file(filepath):
             sha256.update(chunk)
     return sha256.hexdigest()
 
-def build_sbom(path, created_by):
-    sbom = {
+def build_manifest(path, created_by):
+    manifest = {
         "version": "1.0",
         "created": datetime.utcnow().isoformat() + "Z",
         "created_by": created_by,
@@ -24,15 +24,15 @@ def build_sbom(path, created_by):
             if os.path.isfile(full_path):
                 relative_path = os.path.relpath(full_path, path)
                 file_hash = hash_file(full_path)
-                sbom["files"].append({
+                manifest["files"].append({
                     "path": relative_path,
                     "sha256": file_hash
                 })
 
-    return sbom
+    return manifest
 
 def run(path, created_by, out_file):
-    sbom = build_sbom(path, created_by)
+    manifest = build_manifest(path, created_by)
     with open(out_file, 'w') as f:
-        json.dump(sbom, f, indent=2)
-    print(f"SBOM written to {out_file}")
+        json.dump(manifest, f, indent=2)
+    print(f"Manifest written to {out_file}")

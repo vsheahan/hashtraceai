@@ -9,17 +9,17 @@ def hash_file(filepath):
             sha256.update(chunk)
     return sha256.hexdigest()
 
-def run(path, sbom_file, output_format='text'):
-    if not os.path.exists(sbom_file):
-        print("\033[91m[ERROR]\033[0m SBOM file not found: " + sbom_file)
+def run(path, manifest_file, output_format='text'):
+    if not os.path.exists(manifest_file):
+        print("\033[91m[ERROR]\033[0m Manifest file not found: " + manifest_file)
         return
 
-    with open(sbom_file, 'r') as f:
-        sbom = json.load(f)
+    with open(manifest_file, 'r') as f:
+        manifest = json.load(f)
 
     mismatches = []
 
-    for file_record in sbom.get("files", []):
+    for file_record in manifest.get("files", []):
         expected_path = os.path.join(path, file_record["path"])
         if not os.path.exists(expected_path):
             mismatches.append({

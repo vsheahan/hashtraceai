@@ -2,15 +2,15 @@
 
 # HashTraceAI
 
-HashTraceAI is a lightweight tool for generating and verifying Software Bill of Materials (SBOMs) for machine learning models. It calculates cryptographic hashes of files in a model directory, produces a JSON SBOM, and verifies those hashes to detect drift, tampering, or unintended changes.
+HashTraceAI is a lightweight tool for generating and verifying file-level manifests for machine learning models. It calculates cryptographic hashes of files in a model directory, produces a JSON manifest, and verifies those hashes to detect drift, tampering, or unintended changes.
 
 ## Features
 
-- Generates a file-level SBOM from any directory
-- Uses SHA-256 for secure hashing
-- Produces portable JSON output
-- Verifies model files against a previously generated SBOM
-- CLI output supports JSON or colorized text format
+- Generates a file-level manifest from any directory  
+- Uses SHA-256 for secure hashing  
+- Produces portable JSON output  
+- Verifies model files against a previously generated manifest  
+- CLI output supports JSON or colorized text format  
 
 ## Installation
 
@@ -24,30 +24,30 @@ pip install -r requirements.txt
 
 ## Basic Usage
 
-### 1. Generate SBOM
+### 1. Generate Manifest
 
 ```bash
-python3 cli.py generate ./your-model-dir --created-by "TARS" --out sbom.json
+python3 cli.py generate ./your-model-dir --created-by "TARS" --out manifest.json
 ```
 
-This will create a `sbom.json` file containing hashes of all files in `./your-model-dir`.
+This will create a `manifest.json` file containing hashes of all files in `./your-model-dir`.
 
-### 2. Verify SBOM
+### 2. Verify Manifest
 
 ```bash
-python3 cli.py verify ./your-model-dir --sbom sbom.json --format text
+python3 cli.py verify ./your-model-dir --sbom manifest.json --format text
 ```
 
 Use `--format json` to get structured output suitable for pipelines or logs.
 
 ## Use Case Examples
 
-| Scenario                             | Command                                                                 |
-|--------------------------------------|-------------------------------------------------------------------------|
-| Generate SBOM for a model folder     | `python3 cli.py generate ./model --created-by "TARS" --out sbom.json`   |
-| Verify model files from SBOM         | `python3 cli.py verify ./model --sbom sbom.json --format text`          |
-| JSON output for CI/CD integration    | `python3 cli.py verify ./model --sbom sbom.json --format json`          |
-| Custom SBOM filename                 | `python3 cli.py generate ./model --created-by "TARS" --out model.sbom`  |
+| Scenario                             | Command                                                                    | Purpose                                      |
+|--------------------------------------|-----------------------------------------------------------------------------|----------------------------------------------|
+| Generate manifest for a model folder | `python3 cli.py generate ./model --created-by "TARS" --out manifest.json`  | Document a model’s file integrity at release |
+| Verify model files from manifest     | `python3 cli.py verify ./model --sbom manifest.json --format text`         | Ensure nothing has changed since generation  |
+| JSON output for CI/CD integration    | `python3 cli.py verify ./model --sbom manifest.json --format json`         | Feed results into automated pipelines        |
+| Custom manifest filename             | `python3 cli.py generate ./model --created-by "TARS" --out model.hashes`   | Use a custom filename for your manifest      |
 
 ## Requirements
 
@@ -55,7 +55,7 @@ Use `--format json` to get structured output suitable for pipelines or logs.
 
 ## Output
 
-The generated SBOM is a JSON file with the following structure:
+The generated manifest is a JSON file with the following structure:
 
 ```json
 {
