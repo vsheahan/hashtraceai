@@ -1,3 +1,5 @@
+![HashTraceAI Logo](logo.png)
+
 # HashTraceAI
 
 HashTraceAI is a lightweight tool for generating and verifying Software Bill of Materials (SBOMs) for machine learning models. It calculates cryptographic hashes of files in a model directory, produces a JSON SBOM, and verifies those hashes to detect drift, tampering, or unintended changes.
