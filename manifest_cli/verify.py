@@ -5,12 +5,17 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.exceptions import InvalidSignature
 
+
 def hash_file(filepath):
     sha256 = hashlib.sha256()
     with open(filepath, 'rb') as f:
-        while chunk := f.read(8192):
+        while True:
+            chunk = f.read(8192)
+            if not chunk:
+                break
             sha256.update(chunk)
     return sha256.hexdigest()
+
 
 def verify_signature(manifest_path, signature_path, public_key_path):
     with open(manifest_path, 'rb') as f:
@@ -35,6 +40,7 @@ def verify_signature(manifest_path, signature_path, public_key_path):
         return True
     except InvalidSignature:
         return False
+
 
 def run(path, manifest_file, output_format='text', verify_sig=None):
     if not os.path.exists(manifest_file):
@@ -68,10 +74,16 @@ def run(path, manifest_file, output_format='text', verify_sig=None):
         else:
             actual_hash = hash_file(expected_path)
             if actual_hash != file_record["sha256"]:
-                mismatches.append({"type": "hash_mismatch", "file": file_record["path"]})
+                mismatches.append({
+                    "type": "hash_mismatch",
+                    "file": file_record["path"]
+                })
 
     if output_format == 'json':
-        print(json.dumps({"result": "fail" if mismatches else "success", "mismatches": mismatches}, indent=2))
+        print(json.dumps({
+            "result": "fail" if mismatches else "success",
+            "mismatches": mismatches
+        }, indent=2))
     else:
         if mismatches:
             print("\033[91mVerification failed:\033[0m")

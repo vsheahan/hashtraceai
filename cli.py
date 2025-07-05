@@ -1,46 +1,61 @@
 import argparse
+import os
 from manifest_cli import generate, verify
 
-def main():
-    parser = argparse.ArgumentParser(description='HashTraceAI CLI')
-    subparsers = parser.add_subparsers(dest='command')
+parser = argparse.ArgumentParser(
+    description="HashTraceAI CLI – Generate or verify model integrity manifests."
+)
+subparsers = parser.add_subparsers(dest="command", required=True)
 
-    # Generate command
-    gen = subparsers.add_parser('generate')
-    gen.add_argument('path', nargs='?', help='Path to local model directory (optional if using --hf-id or --mlflow-uri)')
-    gen.add_argument('--hf-id', help='Hugging Face model ID (e.g., bert-base-uncased)')
-    gen.add_argument('--mlflow-uri', help='MLflow model URI')
-    gen.add_argument('--created-by', required=True, help='Creator metadata')
-    gen.add_argument('--out', default='manifest.json', help='Output manifest file')
-    gen.add_argument('--sign', help='Path to RSA private key for signing the manifest')
+# Generate command
+generate_parser = subparsers.add_parser("generate", help="Generate a manifest")
+generate_parser.add_argument("path", nargs="?", help="Path to the model directory")
+generate_parser.add_argument(
+    "--out", default="manifest.json", help="Output manifest filename"
+)
+generate_parser.add_argument(
+    "--created-by", default="unknown", help="Creator of the manifest"
+)
+generate_parser.add_argument(
+    "--hf-id", help="Optional Hugging Face model ID to download and hash"
+)
+generate_parser.add_argument(
+    "--mlflow-uri", help="Optional MLflow model URI to hash"
+)
+generate_parser.add_argument(
+    "--sign", help="Optional path to private key to sign the manifest"
+)
 
-    # Verify command
-    ver = subparsers.add_parser('verify')
-    ver.add_argument('path', help='Path to model directory')
-    ver.add_argument('--manifest', default='manifest.json', help='Manifest file to verify against')
-    ver.add_argument('--format', choices=['text', 'json'], default='text', help='Output format')
-    ver.add_argument('--verify-sig', help='Path to RSA public key for signature verification')
+# Verify command
+verify_parser = subparsers.add_parser("verify", help="Verify files against a manifest")
+verify_parser.add_argument(
+    "path", help="Path to the model directory to verify"
+)
+verify_parser.add_argument(
+    "--manifest", required=True, help="Path to manifest JSON file"
+)
+verify_parser.add_argument(
+    "--format", choices=["text", "json"], default="text", help="Output format"
+)
+verify_parser.add_argument(
+    "--verify-sig", help="Optional path to public key for signature verification"
+)
 
-    args = parser.parse_args()
+args = parser.parse_args()
 
-    if args.command == 'generate':
-        generate.run(
-            path=args.path,
-            created_by=args.created_by,
-            out_file=args.out,
-            hf_id=args.hf_id,
-            mlflow_uri=args.mlflow_uri,
-            sign_key_path=args.sign
-        )
-    elif args.command == 'verify':
-        verify.run(
-            path=args.path,
-            manifest_file=args.manifest,
-            output_format=args.format,
-            verify_sig=args.verify_sig
-        )
-    else:
-        parser.print_help()
-
-if __name__ == '__main__':
-    main()
+if args.command == "generate":
+    generate.run(
+        path=args.path,
+        output_file=args.out,
+        created_by=args.created_by,
+        hf_id=args.hf_id,
+        mlflow_uri=args.mlflow_uri,
+        sign_key=args.sign
+    )
+elif args.command == "verify":
+    verify.run(
+        path=args.path,
+        manifest_file=args.manifest,
+        output_format=args.format,
+        verify_sig=args.verify_sig
+    )
