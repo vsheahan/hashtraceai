@@ -1,3 +1,5 @@
+<img src="logo.png" alt="HashTraceAI Logo" width="200">
+
 <p align="right">
   <img alt="MIT License" src="https://img.shields.io/badge/license-MIT-blue.svg">
   <img alt="Python" src="https://img.shields.io/badge/python-3.8%2B-blue">
