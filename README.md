@@ -1,45 +1,99 @@
-# HashTrace.ai
+# HashTraceAI
 
-HashTrace.ai is a lightweight CLI tool for generating and verifying Software Bills of Materials (SBOMs) for AI artifacts. It helps establish provenance and integrity for machine learning models and other components in the AI/ML supply chain.
-
-## Project Purpose
-
-HashTrace.ai addresses a growing need for AI transparency and integrity checking. As AI models are shared, fine-tuned, and deployed across environments, verifying the origin and content of those artifacts becomes critical for trust, reproducibility, and security.
+HashTraceAI is a lightweight Python-based tool to generate and verify a Software Bill of Materials (SBOM) for AI/ML models. It ensures the integrity of model artifacts by creating cryptographic fingerprints (SHA-256) of each file and verifying them against a known-good SBOM file.
 
 ## Features
 
-- Generate an SBOM for all files in a given directory  
-- Verify a directory against a previously generated SBOM  
-- Choose between `json` or human-readable `text` output  
-- Simple CLI interface with colorized output for visibility  
+- Generates a JSON-formatted SBOM for any model directory
+- Verifies the current state of model files against a stored SBOM
+- Highlights missing or tampered files using SHA-256 hash comparison
+- Outputs verification results in colorized terminal output or JSON format
 
-## Example
+## Installation
+
+Clone the repository and install the requirements:
+
+```bash
+git clone https://github.com/vsheahan/hashtraceai.git
+cd hashtraceai
+pip install -r requirements.txt
+```
+
+## Usage
+
+### 1. Prepare Your Model
+
+Make sure your model files are in a directory, for example:
 
 ```
-# Create a model directory and file
-mkdir mymodel
-echo "example weights" > mymodel/model.pt
+my_model/
+├── config.json
+├── model.pt
+└── tokenizer.json
+```
 
-# Generate SBOM
-python3 cli.py generate ./mymodel --created-by "TARS" --out sbom.json
+### 2. Generate an SBOM
 
-# Verify integrity of the directory
-python3 cli.py verify ./mymodel --sbom sbom.json --format text
+Use the `generate` command to create an SBOM from your model directory:
+
+```bash
+python3 cli.py generate ./my_model --created-by "TARS" --out sbom.json
+```
+
+- `./my_model` is the path to your model directory
+- `--created-by` is metadata for the SBOM (your name, org, or alias)
+- `--out` is the destination file for the SBOM (default is `sbom.json`)
+
+### 3. Verify an SBOM
+
+To verify the integrity of a model directory using a saved SBOM:
+
+```bash
+python3 cli.py verify ./my_model --sbom sbom.json --format text
+```
+
+- `--sbom` is the path to your SBOM file (default is `sbom.json`)
+- `--format` can be `text` (colorized CLI) or `json` (machine-readable)
+
+### Example Output (text format)
+
+```
+All files verified successfully.
+```
+
+Or if mismatches are found:
+
+```
+Verification failed:
+  [MISSING] tokenizer.json
+  [MISMATCH] model.pt
+```
+
+### Example Output (JSON format)
+
+```json
+{
+  "result": "fail",
+  "mismatches": [
+    { "type": "missing", "file": "tokenizer.json" },
+    { "type": "hash_mismatch", "file": "model.pt" }
+  ]
+}
 ```
 
 ## Output
 
-`sbom.json` will look like this:
+The SBOM is a JSON file with metadata and file checksums. Example:
 
-```
+```json
 {
   "version": "1.0",
-  "created": "2025-07-04T20:00:00Z",
+  "created": "2025-07-05T00:30:30.152256Z",
   "created_by": "TARS",
   "files": [
     {
       "path": "model.pt",
-      "sha256": "abcdef1234567890..."
+      "sha256": "a1fff0ffefb9eace7230c24e50731f0a91c62f9cefdfe77121c2f607125dffae"
     }
   ]
 }
@@ -47,28 +101,10 @@ python3 cli.py verify ./mymodel --sbom sbom.json --format text
 
 ## Requirements
 
-- Python 3.7 or higher
-
-Install dependencies with:
-
-```
-pip install -r requirements.txt
-```
-
-## Development
-
-To run tests:
-
-```
-pytest
-```
-
-To format code:
-
-```
-black .
-```
+- Python 3.8+
+- `argparse`
+- Standard Library only (no external dependencies)
 
 ## License
 
-This project is licensed under the MIT License. See the `LICENSE` file for more information.
+MIT License. See `LICENSE` for details.
