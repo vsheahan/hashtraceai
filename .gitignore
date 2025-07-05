@@ -11,3 +11,5 @@ mymodel/
 **/models/**
 **/.cache/**
 test.json
+mlruns/
+mlflow_test.py
