@@ -94,3 +94,4 @@ def run(path, manifest_file, output_format='text', verify_sig=None):
                     print(f"  \033[91m[MISMATCH]\033[0m {m['file']}")
         else:
             print("\033[92mAll files verified successfully.\033[0m")
+            

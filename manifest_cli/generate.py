@@ -6,7 +6,6 @@ from huggingface_hub import snapshot_download
 import mlflow
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
-from cryptography.hazmat.primitives.asymmetric import rsa
 
 
 def hash_file(filepath):

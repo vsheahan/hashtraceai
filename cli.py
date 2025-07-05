@@ -1,61 +1,51 @@
-import argparse
-import os
-from manifest_cli import generate, verify
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives.asymmetric import rsa
 
-parser = argparse.ArgumentParser(
-    description="HashTraceAI CLI – Generate or verify model integrity manifests."
-)
-subparsers = parser.add_subparsers(dest="command", required=True)
 
-# Generate command
-generate_parser = subparsers.add_parser("generate", help="Generate a manifest")
-generate_parser.add_argument("path", nargs="?", help="Path to the model directory")
-generate_parser.add_argument(
-    "--out", default="manifest.json", help="Output manifest filename"
-)
-generate_parser.add_argument(
-    "--created-by", default="unknown", help="Creator of the manifest"
-)
-generate_parser.add_argument(
-    "--hf-id", help="Optional Hugging Face model ID to download and hash"
-)
-generate_parser.add_argument(
-    "--mlflow-uri", help="Optional MLflow model URI to hash"
-)
-generate_parser.add_argument(
-    "--sign", help="Optional path to private key to sign the manifest"
-)
+def sign_manifest(manifest_path, private_key_path, signature_output_path=None):
+    with open(manifest_path, 'rb') as f:
+        manifest_data = f.read()
 
-# Verify command
-verify_parser = subparsers.add_parser("verify", help="Verify files against a manifest")
-verify_parser.add_argument(
-    "path", help="Path to the model directory to verify"
-)
-verify_parser.add_argument(
-    "--manifest", required=True, help="Path to manifest JSON file"
-)
-verify_parser.add_argument(
-    "--format", choices=["text", "json"], default="text", help="Output format"
-)
-verify_parser.add_argument(
-    "--verify-sig", help="Optional path to public key for signature verification"
-)
+    with open(private_key_path, 'rb') as key_file:
+        private_key = serialization.load_pem_private_key(
+            key_file.read(),
+            password=None,
+        )
 
-args = parser.parse_args()
-
-if args.command == "generate":
-    generate.run(
-        path=args.path,
-        output_file=args.out,
-        created_by=args.created_by,
-        hf_id=args.hf_id,
-        mlflow_uri=args.mlflow_uri,
-        sign_key=args.sign
+    signature = private_key.sign(
+        manifest_data,
+        padding.PSS(
+            mgf=padding.MGF1(hashes.SHA256()),
+            salt_length=padding.PSS.MAX_LENGTH,
+        ),
+        hashes.SHA256(),
     )
-elif args.command == "verify":
-    verify.run(
-        path=args.path,
-        manifest_file=args.manifest,
-        output_format=args.format,
-        verify_sig=args.verify_sig
+
+    sig_path = signature_output_path or (manifest_path + '.sig')
+    with open(sig_path, 'wb') as sig_file:
+        sig_file.write(signature)
+
+
+def generate_key_pair(private_key_path, public_key_path):
+    private_key = rsa.generate_private_key(
+        public_exponent=65537,
+        key_size=2048,
     )
+
+    private_pem = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.TraditionalOpenSSL,
+        encryption_algorithm=serialization.NoEncryption(),
+    )
+    with open(private_key_path, 'wb') as f:
+        f.write(private_pem)
+
+    public_key = private_key.public_key()
+    public_pem = public_key.public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+    with open(public_key_path, 'wb') as f:
+        f.write(public_pem)
+        

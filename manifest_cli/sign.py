@@ -67,3 +67,4 @@ def verify_manifest(manifest_path, signature_path='manifest.sig', public_key_pat
         print("Signature is valid.")
     except InvalidSignature:
         print("Invalid signature.")
+        
