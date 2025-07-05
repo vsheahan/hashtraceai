@@ -13,3 +13,5 @@ mymodel/
 test.json
 mlruns/
 mlflow_test.py
+manifest.json
+mflow_test.py
