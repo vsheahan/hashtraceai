@@ -19,14 +19,24 @@ HashTraceAI helps security teams verify the integrity and provenance of machine 
 
 ## Strong Alignment with Key ISO 42001 Clauses
 
-HashTraceAI supports secure MLOps practices aligned with ISO/IEC 42001:2023 by enabling traceability, integrity verification, and manifest-based artifact provenance checks. These features contribute to:
+HashTraceAI supports secure MLOps practices aligned with ISO/IEC 42001:2023 by enabling traceability, integrity verification, provenance validation, and cryptographic signature verification of model artifacts. These features contribute to:
 
-- **Clause 5.3, Roles and responsibilities**: Supports clear responsibility for model integrity.
-- **Clause 6.1.2, Risk treatment plan**: Provides tools for monitoring changes and mitigating tampering risk.
-- **Clause 8.2.1, Data and AI system integrity**: Ensures that models used in production are unchanged from those validated or reviewed.
-- **Clause 8.3, Operational planning and control**: Adds traceability and reproducibility controls in the ML supply chain.
+- **Clause 5.3 – Roles and responsibilities**  
+  Ensures teams can clearly define and enforce responsibility for model integrity and approval workflows.
 
-> Disclaimer: While HashTraceAI aligns with ISO 42001 goals, using it alone does not guarantee compliance. Organizations must assess it within their full AI management system.
+- **Clause 6.1.2 – Risk treatment plan**  
+  Supports the detection of unauthorized model drift or tampering via manifest verification and optional digital signatures.
+
+- **Clause 7.5 – Documented information**  
+  Allows for automated and cryptographically verifiable documentation of model versions and components in regulated environments.
+
+- **Clause 8.2.1 – Data and AI system integrity**  
+  Confirms that deployed models match the validated and approved versions using strong file-level hashing and signature verification.
+
+- **Clause 8.3 – Operational planning and control**  
+  Integrates into CI/CD pipelines to enforce provenance and integrity checks for models sourced internally or from third parties (e.g., Hugging Face).
+
+> **Disclaimer:** While HashTraceAI aligns with ISO 42001 principles, its use alone does not ensure compliance. Organizations should evaluate it as part of a broader AI management and risk governance program.
 
 ## Installation
 
