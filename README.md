@@ -47,6 +47,7 @@ git clone https://github.com/vsheahan/hashtraceai.git
 cd hashtraceai
 pip install -r requirements.txt
 
+```
 ## Basic Usage
 
 ### 1. Generate Manifest from Local Directory
