@@ -1,4 +1,3 @@
-import json
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from cryptography.exceptions import InvalidSignature
@@ -67,4 +66,3 @@ def verify_manifest(manifest_path, signature_path='manifest.sig', public_key_pat
         print("Signature is valid.")
     except InvalidSignature:
         print("Invalid signature.")
-        
