@@ -1,7 +1,7 @@
 import os
 import json
 import hashlib
-import tempfile
+from pathlib import Path
 from huggingface_hub import snapshot_download
 import mlflow
 from cryptography.hazmat.primitives import hashes, serialization
@@ -21,10 +21,7 @@ def hash_file(filepath):
 
 def sign_manifest(manifest_bytes, private_key_path):
     with open(private_key_path, 'rb') as f:
-        private_key = serialization.load_pem_private_key(
-            f.read(),
-            password=None,
-        )
+        private_key = serialization.load_pem_private_key(f.read(), password=None)
 
     signature = private_key.sign(
         manifest_bytes,
@@ -66,20 +63,15 @@ def run(
     mlflow_uri=None,
     sign_key_path=None
 ):
-    # Priority: MLflow > Hugging Face > local path
     if mlflow_uri:
-        if mlflow is None:
-            print("\033[91m[ERROR]\033[0m mlflow is not installed. Run: pip install mlflow")
-            return
-        temp_dir = tempfile.mkdtemp()
-        mlflow.artifacts.download_artifacts(artifact_uri=mlflow_uri, dst_path=temp_dir)
-        print(f"Downloaded MLflow model to '{temp_dir}'")
-        path = temp_dir
+        run_id = mlflow_uri.split("/")[1].split("/")[0]
+        cache_path = Path(".cache/hashtraceai/mlflow") / run_id
+        cache_path.mkdir(parents=True, exist_ok=True)
+        mlflow.artifacts.download_artifacts(artifact_uri=mlflow_uri, dst_path=str(cache_path))
+        print(f"Downloaded MLflow model to '{cache_path}'")
+        path = str(cache_path)
 
     elif hf_id:
-        if snapshot_download is None:
-            print("\033[91m[ERROR]\033[0m huggingface_hub is not installed. Run: pip install huggingface_hub")
-            return
         path = snapshot_download(hf_id)
         print(f"Downloaded Hugging Face model to '{path}'")
 
@@ -99,11 +91,10 @@ def run(
             manifest_bytes = f.read()
 
         signature = sign_manifest(manifest_bytes, sign_key_path)
-
         sig_file = out_file + '.sig'
         with open(sig_file, 'wb') as f:
             f.write(signature)
 
         print(f"\033[92mSignature written to '{sig_file}'\033[0m")
 
-
+    return path
