@@ -7,8 +7,6 @@
 
 # HashTraceAI
 
-# HashTraceAI
-
 HashTraceAI is a lightweight tool for generating and verifying file-level manifests for machine learning models. It calculates cryptographic hashes of files in a model directory, produces a JSON manifest, and verifies those hashes to detect drift, tampering, or unintended changes.
 
 ## Purpose
