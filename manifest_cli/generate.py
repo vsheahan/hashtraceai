@@ -1,11 +1,22 @@
 import os
-import hashlib
 import json
+import hashlib
+import tempfile
+import shutil
+
 from datetime import datetime
-from typing import Optional
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import padding
-from cryptography.hazmat.primitives.serialization import load_pem_private_key
+
+try:
+    from huggingface_hub import snapshot_download
+except ImportError:
+    snapshot_download = None
+
+try:
+    import mlflow
+except ImportError:
+    mlflow = None
+
+from .sign import sign_manifest
 
 def hash_file(filepath):
     sha256 = hashlib.sha256()
@@ -35,27 +46,37 @@ def build_manifest(path, created_by):
 
     return manifest
 
-def sign_manifest(manifest_dict, private_key_path: str) -> str:
-    manifest_bytes = json.dumps(manifest_dict, sort_keys=True).encode('utf-8')
+def run(path=None, created_by=None, out_file='manifest.json', hf_id=None, mlflow_uri=None, sign_key_path=None):
+    temp_dir = None
 
-    with open(private_key_path, 'rb') as key_file:
-        private_key = load_pem_private_key(key_file.read(), password=None)
+    # Priority: MLflow > Hugging Face > local path
+    if mlflow_uri:
+        if mlflow is None:
+            print("\033[91m[ERROR]\033[0m mlflow is not installed. Run: pip install mlflow")
+            return
+        temp_dir = tempfile.mkdtemp()
+        model_path = mlflow.artifacts.download_artifacts(artifact_uri=mlflow_uri, dst_path=temp_dir)
+        print(f"Downloaded MLflow model to {model_path}")
+        path = model_path
+    elif hf_id:
+        if snapshot_download is None:
+            print("\033[91m[ERROR]\033[0m huggingface_hub is not installed. Run: pip install huggingface_hub")
+            return
+        path = snapshot_download(hf_id)
+        print(f"Downloaded Hugging Face model to {path}")
+    elif not path:
+        print("\033[91m[ERROR]\033[0m You must provide a local path, --hf-id, or --mlflow-uri")
+        return
 
-    signature = private_key.sign(
-        manifest_bytes,
-        padding.PKCS1v15(),
-        hashes.SHA256()
-    )
-    return signature.hex()
-
-def run(path, created_by, out_file, sign_key_path: Optional[str] = None):
     manifest = build_manifest(path, created_by)
-
-    if sign_key_path:
-        signature = sign_manifest(manifest, sign_key_path)
-        manifest["signature"] = signature
 
     with open(out_file, 'w') as f:
         json.dump(manifest, f, indent=2)
 
     print(f"Manifest written to {out_file}")
+
+    if sign_key_path:
+        sign_manifest(out_file, sign_key_path)
+
+    if temp_dir:
+        shutil.rmtree(temp_dir)
