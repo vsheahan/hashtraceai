@@ -2,7 +2,7 @@ import argparse
 from sbom_cli import generate, verify
 
 def main():
-    parser = argparse.ArgumentParser(description='HashTrace CLI')
+    parser = argparse.ArgumentParser(description='HashTraceAI CLI')
     subparsers = parser.add_subparsers(dest='command')
 
     gen = subparsers.add_parser('generate')
