@@ -4,15 +4,18 @@
 
 HashTraceAI is a lightweight tool for generating and verifying file-level manifests for machine learning models. It calculates cryptographic hashes of files in a model directory, produces a JSON manifest, and verifies those hashes to detect drift, tampering, or unintended changes.
 
-This tool is designed with security teams in mind. While traditional SBOMs cover build dependencies, they often overlook the binary model artifacts deployed in production. HashTraceAI enables teams to track the integrity of model files across environments, detect unauthorized modifications, and support auditability and provenance validation in ML pipelines.
+## Purpose
+
+HashTraceAI helps security teams verify the integrity and provenance of machine learning model artifacts in CI/CD pipelines or production deployments. By creating a manifest with cryptographic hashes of each file, teams can quickly detect drift, unauthorized modification, or corruption during storage or transmission.
 
 ## Features
 
-- Generates a file-level manifest from any directory  
-- Uses SHA-256 for secure hashing  
-- Produces portable JSON output  
-- Verifies model files against a previously generated manifest  
-- CLI output supports JSON or colorized text format  
+- Generates a file-level manifest from any directory
+- Uses SHA-256 for secure hashing
+- Produces portable JSON output
+- Verifies model files against a previously generated manifest
+- Supports Hugging Face model download and manifest generation
+- CLI output supports JSON or colorized text format
 
 ## Installation
 
@@ -26,7 +29,7 @@ pip install -r requirements.txt
 
 ## Basic Usage
 
-### 1. Generate Manifest
+### 1. Generate Manifest from Local Directory
 
 ```bash
 python3 cli.py generate ./your-model-dir --created-by "TARS" --out manifest.json
@@ -37,19 +40,37 @@ This will create a `manifest.json` file containing hashes of all files in `./you
 ### 2. Verify Manifest
 
 ```bash
-python3 cli.py verify ./your-model-dir --sbom manifest.json --format text
+python3 cli.py verify ./your-model-dir --manifest manifest.json --format text
 ```
 
 Use `--format json` to get structured output suitable for pipelines or logs.
 
+### 3. Generate Manifest from Hugging Face Model
+
+```bash
+python3 cli.py generate --hf-id "bert-base-uncased" --created-by "TARS" --out manifest.json
+```
+
+This downloads the Hugging Face model locally, computes file hashes, and outputs `manifest.json`.
+
+### 4. Verify a Hugging Face Snapshot
+
+```bash
+python3 cli.py verify ~/.cache/huggingface/hub/models--bert-base-uncased/snapshots/<snapshot-id> --manifest manifest.json --format text
+```
+
+This command checks that the local cached Hugging Face model files match the manifest you generated earlier.
+
 ## Use Case Examples
 
-| Scenario                             | Command                                                                    | Purpose                                      |
-|--------------------------------------|-----------------------------------------------------------------------------|----------------------------------------------|
-| Generate manifest for a model folder | `python3 cli.py generate ./model --created-by "TARS" --out manifest.json`  | Document a model’s file integrity at release |
-| Verify model files from manifest     | `python3 cli.py verify ./model --sbom manifest.json --format text`         | Ensure nothing has changed since generation  |
-| JSON output for CI/CD integration    | `python3 cli.py verify ./model --sbom manifest.json --format json`         | Feed results into automated pipelines        |
-| Custom manifest filename             | `python3 cli.py generate ./model --created-by "TARS" --out model.hashes`   | Use a custom filename for your manifest      |
+| Scenario                             | Command                                                                                     | Purpose                                                |
+|--------------------------------------|---------------------------------------------------------------------------------------------|--------------------------------------------------------|
+| Generate manifest for local model    | `python3 cli.py generate ./model --created-by "TARS" --out manifest.json`                   | Hash all files in model folder                         |
+| Verify model files from manifest     | `python3 cli.py verify ./model --manifest manifest.json --format text`                      | Confirm no drift or tampering                          |
+| JSON output for CI/CD integration    | `python3 cli.py verify ./model --manifest manifest.json --format json`                      | Structured log output for automation                   |
+| Generate manifest from Hugging Face  | `python3 cli.py generate --hf-id "bert-base-uncased" --created-by "TARS" --out manifest.json` | Securely ingest and verify third-party model files     |
+| Verify Hugging Face snapshot         | `python3 cli.py verify ~/.cache/.../snapshots/<id> --manifest manifest.json --format text`  | Re-check cached remote models for integrity            |
+| Custom manifest filename             | `python3 cli.py generate ./model --created-by "TARS" --out model.manifest`                  | Store under project-specific naming conventions        |
 
 ## Requirements
 
