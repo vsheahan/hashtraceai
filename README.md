@@ -1,6 +1,4 @@
-<p align="center">
-  <img src="logo.png" alt="HashTraceAI Logo" width="300">
-</p>
+<img src="logo.png" alt="HashTraceAI Logo" width="200">
 
 # HashTraceAI
 
