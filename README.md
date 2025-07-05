@@ -94,6 +94,23 @@ The generated manifest is a JSON file with the following structure:
 }
 ```
 
+## Standards Alignment
+
+HashTraceAI supports AI model integrity and provenance assurance in ways that align with several key clauses of ISO/IEC 42001:2023 (AI Management System Standard). It can serve as a technical control in AI governance programs focused on traceability, tamper detection, and secure model deployment.
+
+### Strong Alignment with Key ISO 42001 Clauses
+
+| ISO 42001 Clause                              | Alignment                                                                 |
+|-----------------------------------------------|---------------------------------------------------------------------------|
+| **6.1.2 Risk Assessment and Treatment**        | Detects and mitigates risks of model drift, tampering, or corruption.     |
+| **8.4.2 Integrity of AI Artifacts**            | Verifies cryptographic hashes of files to ensure model integrity.         |
+| **8.4.3 Provenance and Lifecycle Management**  | Adds traceable metadata to manifests for model version tracking.          |
+| **8.5.2 Transparency of AI Systems**           | Provides visibility into model contents through JSON manifests.           |
+| **8.6.1 Secure AI Development and Deployment** | Supports secure ingestion and deployment of local and third-party models. |
+| **9.1 Monitoring and Measurement**             | Enables audit-friendly verification with machine-readable output.         |
+
+> **Disclaimer:** While HashTraceAI supports several technical practices aligned with ISO/IEC 42001, full compliance requires additional organizational policies, governance frameworks, and risk management processes beyond the scope of this tool.
+
 ## License
 
 This project is licensed under the MIT License.
