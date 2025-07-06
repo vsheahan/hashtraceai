@@ -65,7 +65,7 @@ def load_trusted_key_path(key_name):
         return None
 
 
-def run(path, manifest_file, output_format='text', verify_sig, trusted_key_name=None):
+def run(path, manifest_file, verify_sig, output_format='text', trusted_key_name=None):
     """
     Verifies the integrity and authenticity of files listed in a manifest file.
 
