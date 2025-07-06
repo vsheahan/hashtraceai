@@ -110,7 +110,12 @@ def run(path, manifest_file, output_format='text', verify_sig=None, trusted_key_
             try:
                 actual_hash = hash_file(full_path)
                 if actual_hash != file_record["sha256"]:
-                    mismatches.append({"type": "hash_mismatch", "file": relative_path})
+                    mismatches.append({
+                        "type": "hash_mismatch",
+                        "file": relative_path,
+                        "expected": file_record["sha256"],
+                        "actual": actual_hash
+                    })
             except (IOError, PermissionError) as e:
                 mismatches.append({"type": "read_error", "file": relative_path, "error": str(e)})
 
@@ -124,6 +129,8 @@ def run(path, manifest_file, output_format='text', verify_sig=None, trusted_key_
                     print(Fore.YELLOW + f"  [MISSING]    {m['file']}")
                 elif m["type"] == "hash_mismatch":
                     print(Fore.RED + f"  [MISMATCH]   {m['file']}")
+                    print(Fore.RED + f"    Expected: {m['expected']}")
+                    print(Fore.RED + f"    Actual:   {m['actual']}")
                 elif m["type"] == "invalid_path":
                     print(Fore.RED + f"  [INVALID]    Path is outside the base directory: {m['file']}")
                 elif m["type"] == "not_a_file":
