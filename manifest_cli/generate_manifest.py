@@ -76,25 +76,30 @@ def generate_manifest(
     mlflow_uri=None,
     sign_key_path=None,
     model_name=None,
-    model_version=None
+    model_version=None,
+    verbose=False
 ):
     """Generates a manifest and signs it using the provided private key (signing is required)."""
-    # Logic for finding/downloading files remains the same...
     if mlflow_uri:
         uri_hash = hashlib.sha256(mlflow_uri.encode()).hexdigest()
         cache_path = Path(".cache/hashtraceai/mlflow") / uri_hash
         if not cache_path.exists():
             cache_path.mkdir(parents=True, exist_ok=True)
-            print(f"Downloading MLflow model from '{mlflow_uri}'...")
+            if verbose:
+                print(f"Downloading MLflow model from '{mlflow_uri}'...")
             mlflow.artifacts.download_artifacts(artifact_uri=mlflow_uri, dst_path=str(cache_path))
-            print(f"Downloaded MLflow model to cache: '{cache_path}'")
+            if verbose:
+                print(f"Downloaded MLflow model to cache: '{cache_path}'")
         else:
-            print(f"Using cached MLflow model from: '{cache_path}'")
+            if verbose:
+                print(f"Using cached MLflow model from: '{cache_path}'")
         path = str(cache_path)
     elif hf_id:
-        print(f"Downloading Hugging Face model '{hf_id}'...")
+        if verbose:
+            print(f"Downloading Hugging Face model '{hf_id}'...")
         path = snapshot_download(hf_id)
-        print(f"Using Hugging Face model at: '{path}'")
+        if verbose:
+            print(f"Using Hugging Face model at: '{path}'")
     elif not path:
         print(colorama.Fore.RED + "[ERROR] You must provide a local path, --hf-id, or --mlflow-uri")
         return None
@@ -109,7 +114,6 @@ def generate_manifest(
         json.dump(manifest, f, indent=2)
     print(colorama.Fore.GREEN + f"Manifest written to '{out_file}'")
 
-    # Securely prompt for the password to unlock the private key
     try:
         password = getpass.getpass("Enter private key password to sign manifest: ")
     except Exception as error:
@@ -130,3 +134,6 @@ def generate_manifest(
         return None
 
     return path
+
+# Alias for CLI use
+run = generate_manifest
