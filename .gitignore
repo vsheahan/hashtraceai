@@ -6,12 +6,7 @@ __pycache__/
 venv/
 build/
 .DS_Store
-sbom.json
-mymodel/
-**/models/**
 **/.cache/**
-test.json
-mlruns/
 mlflow_test.py
 manifest.json
 manifest.json.sig
