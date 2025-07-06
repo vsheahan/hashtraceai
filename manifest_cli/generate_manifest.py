@@ -1,139 +1,98 @@
-"""
-This script generates a manifest from a local path, MLflow URI, or Hugging Face model,
-computes SHA256 hashes of all files, and signs the manifest using a provided private key.
-"""
 import os
 import json
 import hashlib
+import base64
 import getpass
-from pathlib import Path
-import colorama
-from huggingface_hub import snapshot_download
-import mlflow
+from datetime import datetime
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 
-colorama.init(autoreset=True)
+def compute_file_hash(filepath):
+    with open(filepath, "rb") as f:
+        return hashlib.sha256(f.read()).hexdigest()
 
-def hash_file(filepath):
-    """Calculates the SHA256 hash of a file."""
-    sha256 = hashlib.sha256()
-    with open(filepath, 'rb') as f:
-        while True:
-            chunk = f.read(8192)
-            if not chunk:
-                break
-            sha256.update(chunk)
-    return sha256.hexdigest()
+def sign_data(sign_key, data):
+    with open(sign_key, "rb") as key_file:
+        key_bytes = key_file.read()
 
-def sign_manifest(manifest_bytes, private_key_path, password):
-    """Signs the manifest bytes with a password-protected private key."""
-    if not password:
-        raise ValueError("A password is required to load the private key for signing.")
-    with open(private_key_path, 'rb') as f:
+    try:
         private_key = serialization.load_pem_private_key(
-            f.read(),
-            password=password.encode('utf-8')
+            key_bytes,
+            password=None,
+        )
+    except TypeError:
+        password = getpass.getpass("Enter password for private key: ").encode("utf-8")
+        private_key = serialization.load_pem_private_key(
+            key_bytes,
+            password=password,
         )
 
+    message = json.dumps(data, sort_keys=True).encode("utf-8")
     signature = private_key.sign(
-        manifest_bytes,
-        padding.PSS(
-            mgf=padding.MGF1(hashes.SHA256()),
-            salt_length=padding.PSS.MAX_LENGTH
-        ),
-        hashes.SHA256()
+        message,
+        padding.PKCS1v15(),
+        hashes.SHA256(),
     )
-    return signature
+    return base64.b64encode(signature).decode("utf-8")
 
-def build_manifest(path, created_by, model_name=None, model_version=None):
-    """Builds the manifest dictionary by hashing all files in a directory."""
-    manifest = {
-        "version": "1.0",
-        "created_by": created_by,
-        "model_name": model_name,
-        "model_version": model_version,
-        "files": []
-    }
+def run(
+    path,
+    created_by,
+    sign_key,
+    out_file=None,
+    model_name=None,
+    model_version=None,
+    hf_id=None,
+    mlflow_uri=None,
+    verbose=False
+):
+    file_hashes = {}
     for root, _, files in os.walk(path):
         for name in files:
-            if name == 'manifest.json' or name.endswith('.sig') or name == '.DS_Store':
+            if name.endswith(".pyc") or name.startswith(".") or "venv" in root:
                 continue
             filepath = os.path.join(root, name)
             rel_path = os.path.relpath(filepath, path)
-            file_hash = hash_file(filepath)
-            manifest["files"].append({
-                "path": rel_path.replace('\\', '/'),
-                "sha256": file_hash
-            })
-    return manifest
+            file_hashes[rel_path] = {"SHA256": compute_file_hash(filepath)}
 
-def generate_manifest(
-    path=None,
-    created_by=None,
-    out_file="manifest.json",
-    hf_id=None,
-    mlflow_uri=None,
-    sign_key_path=None,
-    model_name=None,
-    model_version=None,
-    verbose=False
-):
-    """Generates a manifest and signs it using the provided private key (signing is required)."""
+    utc_timestamp = datetime.utcnow().isoformat() + "Z"
+    local_timestamp = datetime.now().isoformat()
+
+    signed_data = {
+        "created_by": created_by,
+        "model_name": model_name,
+        "model_version": model_version,
+        "timestamp": utc_timestamp,
+        "local_timestamp": local_timestamp,
+        "files": file_hashes,
+    }
+
+    if hf_id:
+        signed_data["hf_id"] = hf_id
     if mlflow_uri:
-        uri_hash = hashlib.sha256(mlflow_uri.encode()).hexdigest()
-        cache_path = Path(".cache/hashtraceai/mlflow") / uri_hash
-        if not cache_path.exists():
-            cache_path.mkdir(parents=True, exist_ok=True)
-            if verbose:
-                print(f"Downloading MLflow model from '{mlflow_uri}'...")
-            mlflow.artifacts.download_artifacts(artifact_uri=mlflow_uri, dst_path=str(cache_path))
-            if verbose:
-                print(f"Downloaded MLflow model to cache: '{cache_path}'")
+        signed_data["mlflow_uri"] = mlflow_uri
+
+    signature = sign_data(sign_key, signed_data)
+
+    manifest = {
+        "signature": signature,
+        "signed_data": signed_data,
+    }
+
+    if not out_file:
+        if model_name and model_version:
+            out_file = f"{model_name}_{model_version}_manifest.json"
         else:
-            if verbose:
-                print(f"Using cached MLflow model from: '{cache_path}'")
-        path = str(cache_path)
-    elif hf_id:
-        if verbose:
-            print(f"Downloading Hugging Face model '{hf_id}'...")
-        path = snapshot_download(hf_id)
-        if verbose:
-            print(f"Using Hugging Face model at: '{path}'")
-    elif not path:
-        print(colorama.Fore.RED + "[ERROR] You must provide a local path, --hf-id, or --mlflow-uri")
-        return None
+            out_file = "manifest.json"
 
-    if out_file == "manifest.json" and model_name:
-        version_suffix = f"_{model_version}" if model_version else ""
-        out_file = f"{model_name}{version_suffix}_manifest.json"
-
-    manifest = build_manifest(path, created_by, model_name, model_version)
-
-    with open(out_file, 'w') as f:
+    with open(out_file, "w") as f:
         json.dump(manifest, f, indent=2)
-    print(colorama.Fore.GREEN + f"Manifest written to '{out_file}'")
 
-    try:
-        password = getpass.getpass("Enter private key password to sign manifest: ")
-    except Exception as error:
-        print(f"\nCould not read password: {error}")
-        return None
+    sig_file = out_file + ".sig"
+    with open(sig_file, "w") as f:
+        f.write(signature)
 
-    with open(out_file, 'rb') as f:
-        manifest_bytes = f.read()
-
-    try:
-        signature = sign_manifest(manifest_bytes, sign_key_path, password)
-        sig_file = out_file + '.sig'
-        with open(sig_file, 'wb') as f:
-            f.write(signature)
-        print(colorama.Fore.GREEN + f"Signature written to '{sig_file}'")
-    except Exception as e:
-        print(colorama.Fore.RED + f"\n[ERROR] Failed to sign manifest: {e}")
-        return None
-
-    return path
-
-# Alias for CLI use
-run = generate_manifest
+    if verbose:
+        print(f"Manifest written to {out_file}")
+        print(f"Signature written to {sig_file}")
+        print(json.dumps(manifest, indent=2))

@@ -56,7 +56,7 @@ def main():
             out_file=args.out,
             hf_id=args.hf_id,
             mlflow_uri=args.mlflow_uri,
-            sign_key_path=args.sign_key,
+            sign_key=args.sign_key,
             model_name=args.model_name,
             model_version=args.model_version,
             verbose=args.verbose
