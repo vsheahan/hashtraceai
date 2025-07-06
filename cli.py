@@ -1,7 +1,6 @@
 import argparse
 import manifest_cli.generate_manifest as generate_manifest
 import manifest_cli.verify_manifest as verify_manifest
-import manifest_cli.sign as sign
 import manifest_cli.generate_keys as generate_keys
 
 def main():
