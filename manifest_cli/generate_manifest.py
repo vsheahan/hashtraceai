@@ -1,3 +1,7 @@
+"""
+This script generates a manifest from a local path, MLflow URI, or Hugging Face model,
+computes SHA256 hashes of all files, and signs the manifest using a provided private key.
+"""
 import os
 import json
 import hashlib
@@ -74,7 +78,7 @@ def generate_manifest(
     model_name=None,
     model_version=None
 ):
-    """Generates a manifest, prompting for a password if signing is required."""
+    """Generates a manifest and signs it using the provided private key (signing is required)."""
     # Logic for finding/downloading files remains the same...
     if mlflow_uri:
         uri_hash = hashlib.sha256(mlflow_uri.encode()).hexdigest()
@@ -105,28 +109,24 @@ def generate_manifest(
         json.dump(manifest, f, indent=2)
     print(colorama.Fore.GREEN + f"Manifest written to '{out_file}'")
 
-    if sign_key_path:
-        # Securely prompt for the password to unlock the private key
-        try:
-            password = getpass.getpass("Enter private key password to sign manifest: ")
-            if not password.strip():
-                print(colorama.Fore.RED + "[ERROR] A password is required to sign the manifest.")
-                return None
-        except Exception as error:
-            print(f"\nCould not read password: {error}")
-            return None
+    # Securely prompt for the password to unlock the private key
+    try:
+        password = getpass.getpass("Enter private key password to sign manifest: ")
+    except Exception as error:
+        print(f"\nCould not read password: {error}")
+        return None
 
-        with open(out_file, 'rb') as f:
-            manifest_bytes = f.read()
+    with open(out_file, 'rb') as f:
+        manifest_bytes = f.read()
 
-        try:
-            signature = sign_manifest(manifest_bytes, sign_key_path, password)
-            sig_file = out_file + '.sig'
-            with open(sig_file, 'wb') as f:
-                f.write(signature)
-            print(colorama.Fore.GREEN + f"Signature written to '{sig_file}'")
-        except Exception as e:
-            print(colorama.Fore.RED + f"\n[ERROR] Failed to sign manifest: {e}")
-            return None
+    try:
+        signature = sign_manifest(manifest_bytes, sign_key_path, password)
+        sig_file = out_file + '.sig'
+        with open(sig_file, 'wb') as f:
+            f.write(signature)
+        print(colorama.Fore.GREEN + f"Signature written to '{sig_file}'")
+    except Exception as e:
+        print(colorama.Fore.RED + f"\n[ERROR] Failed to sign manifest: {e}")
+        return None
 
     return path

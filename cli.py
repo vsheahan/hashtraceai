@@ -1,8 +1,19 @@
+"""
+CLI entry point for generating and verifying manifests, and managing RSA keys.
+Supports:
+  - Generating manifests from local paths, MLflow URIs, or Hugging Face model IDs
+  - Verifying manifests with mandatory signature validation
+  - Generating RSA key pairs and storing trusted public keys
+"""
+
 import argparse
 import manifest_cli.generate_manifest as generate_manifest
 import manifest_cli.verify_manifest as verify_manifest
 import manifest_cli.generate_keys as generate_keys
 
+"""
+Sets up the command-line interface and dispatches to the appropriate subcommand handler.
+"""
 def main():
     parser = argparse.ArgumentParser(prog="cli.py")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -14,16 +25,18 @@ def main():
     gen_parser.add_argument("--mlflow-uri", help="MLflow artifact URI")
     gen_parser.add_argument("--created-by", required=True, help="Name of the entity generating the manifest")
     gen_parser.add_argument("--out", default="manifest.json", help="Output manifest file")
-    gen_parser.add_argument("--sign-key", help="Path to private key to sign the manifest")
+    gen_parser.add_argument("--sign-key", required=True, help="Path to private key to sign the manifest (required)")
     gen_parser.add_argument("--model-name", help="Name of the model")
     gen_parser.add_argument("--model-version", help="Version of the model")
+    gen_parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
 
     # Verify
     ver_parser = subparsers.add_parser("verify", help="Verify a manifest against a local model directory")
     ver_parser.add_argument("path", help="Path to the model directory")
     ver_parser.add_argument("--manifest", required=True, help="Path to manifest.json")
     ver_parser.add_argument("--format", choices=["text", "json"], default="text", help="Output format")
-    ver_parser.add_argument("--verify-sig", help="Path to public key for verifying the signature")
+    ver_parser.add_argument("--verify-sig", required=True, help="Path to public key for verifying the signature")
+    ver_parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
 
     # Keys
     keys_parser = subparsers.add_parser("keys", help="Key management commands")
@@ -35,6 +48,7 @@ def main():
 
     args = parser.parse_args()
 
+    # Handle manifest generation
     if args.command == "generate":
         generate_manifest.run(
             path=args.path,
@@ -44,17 +58,21 @@ def main():
             mlflow_uri=args.mlflow_uri,
             sign_key_path=args.sign_key,
             model_name=args.model_name,
-            model_version=args.model_version
+            model_version=args.model_version,
+            verbose=args.verbose
         )
 
+    # Handle manifest verification
     elif args.command == "verify":
         verify_manifest.run(
             path=args.path,
             manifest_file=args.manifest,
             output_format=args.format,
-            verify_sig=args.verify_sig
+            verify_sig=args.verify_sig,
+            verbose=args.verbose
         )
 
+    # Handle RSA key generation
     elif args.command == "keys":
         if args.keys_command == "generate":
             generate_keys.generate_key_pair(

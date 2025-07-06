@@ -1,3 +1,7 @@
+''' 
+This script generates an RSA key pair and adds the public key to a local trusted_keys.json file.
+It supports optional password encryption for the private key.
+'''
 import os
 import json
 from cryptography.hazmat.primitives import serialization
@@ -8,38 +12,63 @@ import colorama
 
 colorama.init(autoreset=True)
 
+'''
+generate_key_pair(name, out_dir)
+
+Generates an RSA key pair, saves the private and public keys to files,
+and adds the public key to trusted_keys.json under the given name.
+'''
 def generate_key_pair(name, out_dir):
-    print("[DEBUG] generate_key_pair called")
+
+    '''
+    Generate RSA private key
+    '''
     private_key = rsa.generate_private_key(
         public_exponent=65537,
         key_size=2048,
     )
 
-    password = getpass.getpass("Enter password to encrypt private key (leave blank for no encryption): ")
-    confirm = getpass.getpass("Confirm password: ") if password else ""
+    '''
+    Prompt user for a required password to encrypt the private key.
+    Re-prompt until a valid and confirmed password is entered.
+    '''
+    while True:
+        password = getpass.getpass("Enter password to encrypt private key: ")
+        if not password:
+            print(colorama.Fore.RED + "Password is required. Please try again.")
+            continue
+        confirm = getpass.getpass("Confirm password: ")
+        if password != confirm:
+            print(colorama.Fore.RED + "Passwords do not match. Please try again.")
+        else:
+            break
 
-    if password and password != confirm:
-        print(colorama.Fore.RED + "Passwords do not match. Key generation aborted.")
-        return
+    '''
+    Set encryption method with the confirmed password.
+    '''
+    encryption = serialization.BestAvailableEncryption(password.encode('utf-8'))
 
-    encryption = serialization.NoEncryption()
-    if password:
-        encryption = serialization.BestAvailableEncryption(password.encode('utf-8'))
-    else:
-        print(colorama.Fore.YELLOW + "Warning: Private key will be generated unencrypted.")
-
+    '''
+    Serialize the private key with selected encryption.
+    '''
     private_pem = private_key.private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.PKCS8,
         encryption_algorithm=encryption,
     )
 
+    '''
+    Generate and serialize the public key.
+    '''
     public_key = private_key.public_key()
     public_pem = public_key.public_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PublicFormat.SubjectPublicKeyInfo,
     )
 
+    '''
+    Create output directory and write private and public keys to files.
+    '''
     os.makedirs(out_dir, exist_ok=True)
 
     private_path = os.path.join(out_dir, f"{name}.key")
@@ -53,7 +82,9 @@ def generate_key_pair(name, out_dir):
     print(f"Private key written to: {private_path}")
     print(f"Public key written to: {public_path}")
 
-    # Add to trusted_keys.json
+    '''
+    Load or initialize trusted_keys.json and add the new public key.
+    '''
     trust_file = Path("trusted_keys.json")
     if trust_file.exists():
         try:
@@ -73,6 +104,9 @@ def generate_key_pair(name, out_dir):
 
     print(f"Public key added to trusted_keys.json under name: '{name}'")
 
+'''
+CLI interface for generating key pair from command line arguments.
+'''
 if __name__ == "__main__":
     import argparse
 

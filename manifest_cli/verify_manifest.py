@@ -1,3 +1,8 @@
+"""
+This script verifies a manifest file by checking the integrity of listed files via SHA256 hashes
+and confirming the manifest signature using a trusted or provided public key.
+"""
+
 import os
 import json
 import hashlib
@@ -8,6 +13,9 @@ from cryptography.exceptions import InvalidSignature
 
 
 def hash_file(filepath):
+    """
+    Computes the SHA256 hash of the specified file.
+    """
     sha256 = hashlib.sha256()
     with open(filepath, 'rb') as f:
         while True:
@@ -19,6 +27,10 @@ def hash_file(filepath):
 
 
 def verify_signature(manifest_bytes, signature_path, public_key_path):
+    """
+    Verifies the digital signature on the manifest using the provided public key.
+    Returns True if valid, False otherwise.
+    """
     with open(signature_path, 'rb') as f:
         signature = f.read()
 
@@ -41,6 +53,10 @@ def verify_signature(manifest_bytes, signature_path, public_key_path):
 
 
 def load_trusted_key_path(key_name):
+    """
+    Loads the path of a trusted public key from trusted_keys.json by key name.
+    Returns the path string if found, otherwise None.
+    """
     try:
         with open("trusted_keys.json", "r") as f:
             trusted_keys = json.load(f)
@@ -49,7 +65,17 @@ def load_trusted_key_path(key_name):
         return None
 
 
-def run(path, manifest_file, output_format='text', verify_sig=None, trusted_key_name=None):
+def run(path, manifest_file, output_format='text', verify_sig, trusted_key_name=None):
+    """
+    Verifies the integrity and authenticity of files listed in a manifest file.
+
+    Args:
+        path: Base directory to verify files against.
+        manifest_file: Path to the manifest JSON file.
+        output_format: Output format, either 'text' or 'json'. Defaults to 'text'.
+        verify_sig: Path to the public key file for signature verification (required).
+        trusted_key_name: Optional name of a trusted key (from trusted_keys.json) to use for verification.
+    """
     if not os.path.exists(manifest_file):
         print(Fore.RED + f"[ERROR] Manifest file not found: {manifest_file}")
         return
@@ -72,18 +98,17 @@ def run(path, manifest_file, output_format='text', verify_sig=None, trusted_key_
         if not public_key_path or not os.path.exists(public_key_path):
             print(Fore.RED + f"[ERROR] Public key for '{trusted_key_name}' not found or path invalid")
             return
-    elif verify_sig:
+    else:
         if not os.path.exists(verify_sig):
             print(Fore.RED + f"[ERROR] Public key file not found: {verify_sig}")
             return
         public_key_path = verify_sig
 
-    if public_key_path:
-        if not verify_signature(manifest_bytes, sig_file, public_key_path):
-            print(Fore.RED + "Signature verification failed.")
-            return
-        else:
-            print(Fore.GREEN + "Signature verified successfully.")
+    if not verify_signature(manifest_bytes, sig_file, public_key_path):
+        print(Fore.RED + "Signature verification failed.")
+        return
+    else:
+        print(Fore.GREEN + "Signature verified successfully.")
 
     try:
         manifest = json.loads(manifest_bytes.decode('utf-8'))
