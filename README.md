@@ -22,7 +22,7 @@ HashTraceAI helps security teams verify the integrity and provenance of machine 
 - Generates a file-level manifest from any directory or model hub (Hugging Face, MLflow)
 - Uses **SHA-256** for secure hashing
 - Supports **RSA-signed manifests** for tamper detection and authenticity verification
-- Uses **password-encrypted private keys** for secure signing operations
+- Requires **password-encrypted private keys** for secure signing operations
 - Verifies model files against a previously generated manifest
 - Verifies the manifest's digital signature to prove authenticity
 - CLI output supports JSON or colorized text format
@@ -62,7 +62,7 @@ Here is the recommended three-step process for ensuring maximum security and aut
 
 First, create a password-protected private key and a corresponding public key. The private key will be used for signing, and the public key will be used for verification.
 
-You will be prompted to create and confirm a password for the private key.
+You must create and confirm a password for the private key. Empty passwords are not allowed.
 
 ```bash
 python3 cli.py keys generate --priv private_key.pem --pub public_key.pem
