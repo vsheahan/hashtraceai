@@ -22,12 +22,14 @@ def hash_file(filepath):
             sha256.update(chunk)
     return sha256.hexdigest()
 
-def sign_manifest(manifest_bytes, private_key_path, password=None):
-    """Signs the manifest bytes with a private key, optionally encrypted."""
+def sign_manifest(manifest_bytes, private_key_path, password):
+    """Signs the manifest bytes with a password-protected private key."""
+    if not password:
+        raise ValueError("A password is required to load the private key for signing.")
     with open(private_key_path, 'rb') as f:
         private_key = serialization.load_pem_private_key(
             f.read(),
-            password=password.encode('utf-8') if password else None
+            password=password.encode('utf-8')
         )
 
     signature = private_key.sign(
@@ -98,8 +100,10 @@ def run(
     if sign_key_path:
         # Securely prompt for the password to unlock the private key
         try:
-            password_input = getpass.getpass("Enter private key password to sign manifest (leave blank if not encrypted): ")
-            password = password_input if password_input.strip() else None
+            password = getpass.getpass("Enter private key password to sign manifest: ")
+            if not password.strip():
+                print(colorama.Fore.RED + "[ERROR] A password is required to sign the manifest.")
+                return None
         except Exception as error:
             print(f"\nCould not read password: {error}")
             return None
