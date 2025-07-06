@@ -1,5 +1,3 @@
-## manifest_cli/generate.py
-
 import os
 import json
 import hashlib
@@ -24,15 +22,12 @@ def hash_file(filepath):
             sha256.update(chunk)
     return sha256.hexdigest()
 
-def sign_manifest(manifest_bytes, private_key_path, password):
-    """Signs the manifest bytes with a password-protected private key."""
-    if not password:
-        raise ValueError("A password is required to load the private key for signing.")
-
+def sign_manifest(manifest_bytes, private_key_path, password=None):
+    """Signs the manifest bytes with a private key, optionally encrypted."""
     with open(private_key_path, 'rb') as f:
         private_key = serialization.load_pem_private_key(
             f.read(),
-            password=password.encode('utf-8')
+            password=password.encode('utf-8') if password else None
         )
 
     signature = private_key.sign(
@@ -54,7 +49,7 @@ def build_manifest(path, created_by):
     }
     for root, _, files in os.walk(path):
         for name in files:
-            if name == 'manifest.json' or name.endswith('.sig'):
+            if name == 'manifest.json' or name.endswith('.sig') or name == '.DS_Store':
                 continue
             filepath = os.path.join(root, name)
             rel_path = os.path.relpath(filepath, path)
@@ -103,7 +98,8 @@ def run(
     if sign_key_path:
         # Securely prompt for the password to unlock the private key
         try:
-            password = getpass.getpass("Enter private key password to sign manifest: ")
+            password_input = getpass.getpass("Enter private key password to sign manifest (leave blank if not encrypted): ")
+            password = password_input if password_input.strip() else None
         except Exception as error:
             print(f"\nCould not read password: {error}")
             return None
