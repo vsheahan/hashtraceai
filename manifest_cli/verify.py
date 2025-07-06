@@ -1,6 +1,7 @@
 import os
 import json
 import hashlib
+from colorama import Fore
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.exceptions import InvalidSignature
@@ -39,40 +40,55 @@ def verify_signature(manifest_bytes, signature_path, public_key_path):
         return False
 
 
-def run(path, manifest_file, output_format='text', verify_sig=None):
+def load_trusted_key_path(key_name):
+    try:
+        with open("trusted_keys.json", "r") as f:
+            trusted_keys = json.load(f)
+        return trusted_keys.get(key_name)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return None
+
+
+def run(path, manifest_file, output_format='text', verify_sig=None, trusted_key_name=None):
     if not os.path.exists(manifest_file):
-        print(f"\033[91m[ERROR]\033[0m Manifest file not found: {manifest_file}")
+        print(Fore.RED + f"[ERROR] Manifest file not found: {manifest_file}")
         return
 
     try:
         with open(manifest_file, 'rb') as f:
             manifest_bytes = f.read()
     except (IOError, PermissionError) as e:
-        print(f"\033[91m[ERROR]\033[0m Could not read manifest file: {e}")
+        print(Fore.RED + f"[ERROR] Could not read manifest file: {e}")
         return
 
-    if verify_sig:
-        sig_file = manifest_file + ".sig"
-        if not os.path.exists(sig_file):
-            print(f"\033[91m[ERROR]\033[0m Signature file not found: {sig_file}")
-            return
-        if not os.path.exists(verify_sig):
-            print(f"\033[91m[ERROR]\033[0m Public key file not found: {verify_sig}")
-            return
+    sig_file = manifest_file + ".sig"
+    if not os.path.exists(sig_file):
+        print(Fore.RED + f"[ERROR] Signature file not found: {sig_file}")
+        return
 
-        if not verify_signature(manifest_bytes, sig_file, verify_sig):
-            print("\033[91mSignature verification failed.\033[0m")
+    public_key_path = None
+    if trusted_key_name:
+        public_key_path = load_trusted_key_path(trusted_key_name)
+        if not public_key_path or not os.path.exists(public_key_path):
+            print(Fore.RED + f"[ERROR] Public key for '{trusted_key_name}' not found or path invalid")
+            return
+    elif verify_sig:
+        if not os.path.exists(verify_sig):
+            print(Fore.RED + f"[ERROR] Public key file not found: {verify_sig}")
+            return
+        public_key_path = verify_sig
+
+    if public_key_path:
+        if not verify_signature(manifest_bytes, sig_file, public_key_path):
+            print(Fore.RED + "Signature verification failed.")
             return
         else:
-            print("\033[92mSignature verified successfully.\033[0m")
+            print(Fore.GREEN + "Signature verified successfully.")
 
     try:
         manifest = json.loads(manifest_bytes.decode('utf-8'))
     except json.JSONDecodeError:
-        print("\033[91m[ERROR]\033[0m Manifest file is corrupted or not valid JSON.")
-        return
-    except UnicodeDecodeError:
-        print("\033[91m[ERROR]\033[0m Manifest file is not encoded in UTF-8.")
+        print(Fore.RED + "[ERROR] Manifest file is not valid JSON.")
         return
 
     mismatches = []
@@ -102,17 +118,17 @@ def run(path, manifest_file, output_format='text', verify_sig=None):
         print(json.dumps({"result": "fail" if mismatches else "success", "mismatches": mismatches}, indent=2))
     else:
         if mismatches:
-            print("\033[91mVerification failed:\033[0m")
+            print(Fore.RED + "Verification failed:")
             for m in mismatches:
                 if m["type"] == "missing":
-                    print(f"  \033[93m[MISSING]\033[0m    {m['file']}")
+                    print(Fore.YELLOW + f"  [MISSING]    {m['file']}")
                 elif m["type"] == "hash_mismatch":
-                    print(f"  \033[91m[MISMATCH]\033[0m   {m['file']}")
+                    print(Fore.RED + f"  [MISMATCH]   {m['file']}")
                 elif m["type"] == "invalid_path":
-                    print(f"  \033[91m[INVALID]\033[0m    Path is outside the base directory: {m['file']}")
+                    print(Fore.RED + f"  [INVALID]    Path is outside the base directory: {m['file']}")
                 elif m["type"] == "not_a_file":
-                    print(f"  \033[93m[WRONG TYPE]\033[0m Path is not a file: {m['file']}")
+                    print(Fore.YELLOW + f"  [WRONG TYPE] Path is not a file: {m['file']}")
                 elif m["type"] == "read_error":
-                    print(f"  \033[91m[READ ERROR]\033[0m {m['file']} ({m['error']})")
+                    print(Fore.RED + f"  [READ ERROR] {m['file']} ({m['error']})")
         else:
-            print("\033[92mAll files verified successfully.\033[0m")
+            print(Fore.GREEN + "All files verified successfully.")

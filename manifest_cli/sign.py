@@ -1,68 +1,58 @@
+import os
+import json
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
-from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.backends import default_backend
+import hashlib
 
+TRUSTED_KEYS_FILE = "trusted_keys.json"
 
-def generate_keys(private_key_path='private_key.pem', public_key_path='public_key.pem'):
+def generate_key_pair(private_key_path, public_key_path, key_name="Unnamed Key"):
     private_key = rsa.generate_private_key(
         public_exponent=65537,
         key_size=2048,
+        backend=default_backend()
+    )
+
+    private_pem = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.TraditionalOpenSSL,
+        encryption_algorithm=serialization.NoEncryption(),
     )
     with open(private_key_path, 'wb') as f:
-        f.write(private_key.private_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PrivateFormat.TraditionalOpenSSL,
-            encryption_algorithm=serialization.NoEncryption(),
-        ))
+        f.write(private_pem)
 
     public_key = private_key.public_key()
-    with open(public_key_path, 'wb') as f:
-        f.write(public_key.public_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo,
-        ))
-
-
-def sign_manifest(manifest_path, private_key_path='private_key.pem', signature_path='manifest.sig'):
-    with open(manifest_path, 'rb') as f:
-        data = f.read()
-
-    with open(private_key_path, 'rb') as f:
-        private_key = serialization.load_pem_private_key(f.read(), password=None)
-
-    signature = private_key.sign(
-        data,
-        padding.PSS(
-            mgf=padding.MGF1(hashes.SHA256()),
-            salt_length=padding.PSS.MAX_LENGTH,
-        ),
-        hashes.SHA256(),
+    public_pem = public_key.public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
     )
+    with open(public_key_path, 'wb') as f:
+        f.write(public_pem)
 
-    with open(signature_path, 'wb') as f:
-        f.write(signature)
+    fingerprint = compute_fingerprint(public_pem)
+    record_trusted_key(key_name, public_key_path, fingerprint)
 
+def compute_fingerprint(public_key_bytes):
+    digest = hashlib.sha256(public_key_bytes).hexdigest()
+    return ":".join(digest[i:i+2] for i in range(0, len(digest), 2))
 
-def verify_manifest(manifest_path, signature_path='manifest.sig', public_key_path='public_key.pem'):
-    with open(manifest_path, 'rb') as f:
-        data = f.read()
+def record_trusted_key(name, path, fingerprint):
+    entry = {
+        "name": name,
+        "key_path": path,
+        "fingerprint": fingerprint
+    }
 
-    with open(signature_path, 'rb') as f:
-        signature = f.read()
+    if os.path.exists(TRUSTED_KEYS_FILE):
+        with open(TRUSTED_KEYS_FILE, 'r') as f:
+            try:
+                keys = json.load(f)
+            except json.JSONDecodeError:
+                keys = []
+    else:
+        keys = []
 
-    with open(public_key_path, 'rb') as f:
-        public_key = serialization.load_pem_public_key(f.read())
-
-    try:
-        public_key.verify(
-            signature,
-            data,
-            padding.PSS(
-                mgf=padding.MGF1(hashes.SHA256()),
-                salt_length=padding.PSS.MAX_LENGTH,
-            ),
-            hashes.SHA256(),
-        )
-        print("Signature is valid.")
-    except InvalidSignature:
-        print("Invalid signature.")
+    keys.append(entry)
+    with open(TRUSTED_KEYS_FILE, 'w') as f:
+        json.dump(keys, f, indent=2)

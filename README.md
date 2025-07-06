@@ -58,48 +58,58 @@ pip install -r requirements.txt
 
 Here is the recommended three-step process for ensuring maximum security and authenticity.
 
-### 1. Generate an Encrypted Key Pair
+### 1. Generate a Trusted Key Pair
 
-First, create a password-protected private key and a corresponding public key. The private key will be used for signing, and the public key will be used for verification.
-
-You will be prompted to create and confirm a password for the private key.
+Create a password-protected private key and corresponding public key. The public key will be automatically added to `trusted_keys.json` for later verification.
 
 ```bash
-python3 cli.py keys generate --priv private_key.pem --pub public_key.pem
+python3 cli.py keys generate --name my-key --out-dir keys/
 ```
-Keep your private_key.pem file and its password secret! The public_key.pem can be distributed freely.
+
+This will create:
+- `keys/my-key.pem`: the private key (keep secret)
+- `keys/my-key.pub.pem`: the public key (can be shared)
+- `trusted_keys.json`: a fingerprinted record of trusted keys
+
+You will be prompted to set and confirm a password to encrypt the private key.
 
 ### 2. Generate and Sign a Manifest
 
-Next, generate a manifest for your model. The --sign flag will use your private key to create a digital signature. You will be prompted for the password you created in Step 1.
+Create a manifest for your model, and digitally sign it using your private key.
 
 ```bash
-python3 cli.py generate ./your-model-dir --created-by "<TARS>" --sign private_key.pem
+python3 cli.py generate ./your-model-dir --created-by "TARS" --sign keys/my-key.pem
 ```
-This command creates two files:
-manifest.json: The list of files and their hashes.
-manifest.json.sig: The digital signature for manifest.json.
 
-### 3. Verify the Manifest and its Signature
+You will be prompted for your private key's password. This creates:
+- `manifest.json`: the list of file hashes
+- `manifest.json.sig`: the signature for that manifest
 
-Finally, anyone with the public key can verify the integrity of the model files and the authenticity of the manifest. This command checks both that the files haven't changed and that the signature is valid.
+### 3. Verify the Manifest
+
+To verify model integrity and authenticity, use:
 
 ```bash
-python3 cli.py verify ./your-model-dir --manifest manifest.json --verify-sig public_key.pem
+python3 cli.py verify ./your-model-dir --manifest manifest.json --verify-sig keys/my-key.pub.pem
+```
+
+To automatically verify against all trusted keys:
+
+```bash
+python3 cli.py verify ./your-model-dir --manifest manifest.json --use-trusted
 ```
 
 ### Use Case Examples
 
 | Scenario                              | Command                                                                                             | Purpose                                                                |
 |---------------------------------------|------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------|
-| Generate an encrypted key pair        | `python3 cli.py keys generate`                                                                       | Create a secure, password-protected key pair for signing.              |
-| Generate and sign a manifest          | `python3 cli.py generate ./model --created-by "<TARS>" --sign private.pem`                           | Prove authenticity with a digital signature, requires password.        |
-| Verify files and signature            | `python3 cli.py verify ./model --manifest manifest.json --verify-sig public.pem`                       | Confirm that files are unchanged and the manifest is authentic.        |
-| Generate manifest (no signature)      | `python3 cli.py generate ./model --created-by "<TARS>" --out manifest.json`                           | Hash all files in model folder for basic integrity checks.             |
-| Verify files only (no signature)      | `python3 cli.py verify ./model --manifest manifest.json --format text`                              | Confirm no file drift or tampering without checking authenticity.      |
-| Generate manifest from Hugging Face   | `python3 cli.py generate --hf-id "bert-base-uncased" --created-by "<TARS>" --out manifest.json`       | Securely ingest and verify third-party model files.                    |
-| Generate manifest from MLflow         | `python3 cli.py generate --mlflow-uri "runs:/<RUN_ID>/model" --created-by "<TARS>" --out manifest.json`| Trace artifacts from internal model tracking systems.                  |
-| JSON output for CI/CD integration     | `python3 cli.py verify ./model --manifest manifest.json --format json`                              | Get structured log output for automation.                              |
+| Generate and trust a key pair         | `python3 cli.py keys generate --name my-key --out-dir keys/`                                         | Creates encrypted private key, public key, and trusted fingerprint.    |
+| Generate and sign a manifest          | `python3 cli.py generate ./model --created-by "TARS" --sign keys/my-key.pem`                         | Prove authenticity with a digital signature.                           |
+| Verify files and signature            | `python3 cli.py verify ./model --manifest manifest.json --verify-sig keys/my-key.pub.pem`            | Confirm manifest is signed by the right key and files are unmodified.  |
+| Trusted key verification              | `python3 cli.py verify ./model --manifest manifest.json --use-trusted`                              | Confirm manifest against trusted public keys (no need to specify pub). |
+| Generate manifest from Hugging Face   | `python3 cli.py generate --hf-id "bert-base-uncased" --created-by "TARS" --out manifest.json`        | Securely ingest and track third-party model files.                     |
+| Generate manifest from MLflow         | `python3 cli.py generate --mlflow-uri "runs:/<RUN_ID>/model" --created-by "TARS"`                    | Generate manifests from MLflow-tracked models.                         |
+| JSON output for CI/CD integration     | `python3 cli.py verify ./model --manifest manifest.json --format json`                              | Produce structured output for automated pipelines.                     |
 
 ## Requirements
 
