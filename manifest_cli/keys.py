@@ -56,8 +56,13 @@ def generate_key_pair(name, out_dir):
     # Add to trusted_keys.json
     trust_file = Path("trusted_keys.json")
     if trust_file.exists():
-        with open(trust_file, "r") as tf:
-            trusted_keys = json.load(tf)
+        try:
+            with open(trust_file, "r") as tf:
+                content = tf.read().strip()
+                trusted_keys = json.loads(content) if content else {}
+        except json.JSONDecodeError:
+            print(colorama.Fore.RED + "[ERROR] trusted_keys.json is not valid JSON. Reinitializing.")
+            trusted_keys = {}
     else:
         trusted_keys = {}
 
