@@ -1,8 +1,8 @@
 import argparse
-import manifest_cli.generate as generate
-import manifest_cli.verify as verify
+import manifest_cli.generate_manifest as generate_manifest
+import manifest_cli.verify_manifest as verify_manifest
 import manifest_cli.sign as sign
-import manifest_cli.keys as keys
+import manifest_cli.generate_keys as generate_keys
 
 def main():
     parser = argparse.ArgumentParser(prog="cli.py")
@@ -37,7 +37,7 @@ def main():
     args = parser.parse_args()
 
     if args.command == "generate":
-        generate.run(
+        generate_manifest.run(
             path=args.path,
             created_by=args.created_by,
             out_file=args.out,
@@ -49,7 +49,7 @@ def main():
         )
 
     elif args.command == "verify":
-        verify.run(
+        verify_manifest.run(
             path=args.path,
             manifest_file=args.manifest,
             output_format=args.format,
@@ -58,7 +58,7 @@ def main():
 
     elif args.command == "keys":
         if args.keys_command == "generate":
-            keys.generate_key_pair(
+            generate_keys.generate_key_pair(
                 name=args.name,
                 out_dir=args.out_dir
             )

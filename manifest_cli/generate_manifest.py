@@ -47,12 +47,10 @@ def build_manifest(path, created_by, model_name=None, model_version=None):
     manifest = {
         "version": "1.0",
         "created_by": created_by,
+        "model_name": model_name,
+        "model_version": model_version,
         "files": []
     }
-    if model_name:
-        manifest["model_name"] = model_name
-    if model_version:
-        manifest["model_version"] = model_version
     for root, _, files in os.walk(path):
         for name in files:
             if name == 'manifest.json' or name.endswith('.sig') or name == '.DS_Store':
@@ -66,7 +64,7 @@ def build_manifest(path, created_by, model_name=None, model_version=None):
             })
     return manifest
 
-def run(
+def generate_manifest(
     path=None,
     created_by=None,
     out_file="manifest.json",
@@ -96,6 +94,10 @@ def run(
     elif not path:
         print(colorama.Fore.RED + "[ERROR] You must provide a local path, --hf-id, or --mlflow-uri")
         return None
+
+    if out_file == "manifest.json" and model_name:
+        version_suffix = f"_{model_version}" if model_version else ""
+        out_file = f"{model_name}{version_suffix}_manifest.json"
 
     manifest = build_manifest(path, created_by, model_name, model_version)
 
