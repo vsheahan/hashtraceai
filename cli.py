@@ -16,6 +16,8 @@ def main():
     gen_parser.add_argument("--created-by", required=True, help="Name of the entity generating the manifest")
     gen_parser.add_argument("--out", default="manifest.json", help="Output manifest file")
     gen_parser.add_argument("--sign-key", help="Path to private key to sign the manifest")
+    gen_parser.add_argument("--model-name", help="Name of the model")
+    gen_parser.add_argument("--model-version", help="Version of the model")
 
     # Verify
     ver_parser = subparsers.add_parser("verify", help="Verify a manifest against a local model directory")
@@ -41,7 +43,9 @@ def main():
             out_file=args.out,
             hf_id=args.hf_id,
             mlflow_uri=args.mlflow_uri,
-            sign_key_path=args.sign_key
+            sign_key_path=args.sign_key,
+            model_name=args.model_name,
+            model_version=args.model_version
         )
 
     elif args.command == "verify":

@@ -42,13 +42,17 @@ def sign_manifest(manifest_bytes, private_key_path, password):
     )
     return signature
 
-def build_manifest(path, created_by):
+def build_manifest(path, created_by, model_name=None, model_version=None):
     """Builds the manifest dictionary by hashing all files in a directory."""
     manifest = {
         "version": "1.0",
         "created_by": created_by,
         "files": []
     }
+    if model_name:
+        manifest["model_name"] = model_name
+    if model_version:
+        manifest["model_version"] = model_version
     for root, _, files in os.walk(path):
         for name in files:
             if name == 'manifest.json' or name.endswith('.sig') or name == '.DS_Store':
@@ -68,7 +72,9 @@ def run(
     out_file="manifest.json",
     hf_id=None,
     mlflow_uri=None,
-    sign_key_path=None
+    sign_key_path=None,
+    model_name=None,
+    model_version=None
 ):
     """Generates a manifest, prompting for a password if signing is required."""
     # Logic for finding/downloading files remains the same...
@@ -91,7 +97,7 @@ def run(
         print(colorama.Fore.RED + "[ERROR] You must provide a local path, --hf-id, or --mlflow-uri")
         return None
 
-    manifest = build_manifest(path, created_by)
+    manifest = build_manifest(path, created_by, model_name, model_version)
 
     with open(out_file, 'w') as f:
         json.dump(manifest, f, indent=2)
