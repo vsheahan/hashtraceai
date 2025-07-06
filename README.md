@@ -3,10 +3,10 @@
   <img src="logo.png" alt="HashTraceAI Logo" width="250">
 </p>
 
-<p align="right">
+<p align="left">
   <img alt="MIT License" src="https://img.shields.io/badge/license-MIT-blue.svg">
   <img alt="Python" src="https://img.shields.io/badge/python-3.8%2B-blue">
-  <img alt="Hugging Face" src="https://img.shields.io/badge/integrates-HuggingFace-yellow">
+  <img alt="Hugging Face" src="https://img.shields.io/badge/integrates-HuggingFace-blue">
   <img alt="MLflow" src="https://img.shields.io/badge/integrates-MLflow-blue">
 </p>
 
