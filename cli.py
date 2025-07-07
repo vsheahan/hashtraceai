@@ -1,84 +1,55 @@
-"""
-CLI entry point for generating and verifying manifests, and managing RSA keys.
-Supports:
-  - Generating manifests from local paths, MLflow URIs, or Hugging Face model IDs
-  - Verifying manifests with mandatory signature validation
-  - Generating RSA key pairs and storing trusted public keys
-"""
-
 import argparse
-import manifest_cli.generate_manifest as generate_manifest
-import manifest_cli.verify_manifest as verify_manifest
-import manifest_cli.generate_keys as generate_keys
+import os
+from manifest_cli import generate_keys, generate_manifest, verify_manifest
 
-"""
-Sets up the command-line interface and dispatches to the appropriate subcommand handler.
-"""
 def main():
-    parser = argparse.ArgumentParser(prog="cli.py")
+    parser = argparse.ArgumentParser(description="A tool for managing file manifests.")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    # Generate
-    gen_parser = subparsers.add_parser("generate", help="Generate a manifest from a local path, MLflow URI, or Hugging Face ID")
-    gen_parser.add_argument("--path", help="Path to the model directory")
-    gen_parser.add_argument("--hf-id", help="Hugging Face model ID")
-    gen_parser.add_argument("--mlflow-uri", help="MLflow artifact URI")
-    gen_parser.add_argument("--created-by", required=True, help="Name of the entity generating the manifest")
-    gen_parser.add_argument("--out", default="manifest.json", help="Output manifest file")
-    gen_parser.add_argument("--sign-key", required=True, help="Path to private key to sign the manifest (required)")
-    gen_parser.add_argument("--model-name", help="Name of the model")
-    gen_parser.add_argument("--model-version", help="Version of the model")
-    gen_parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
+    # --- Generate keys command ---
+    keys_parser = subparsers.add_parser("keys", help="Generate a new key pair.")
+    keys_parser.add_argument("--name", required=True, help="The name for the key pair.")
+    keys_parser.add_argument("--out-dir", default=".", help="The directory to save the keys to.")
 
-    # Verify
-    ver_parser = subparsers.add_parser("verify", help="Verify a manifest against a local model directory")
-    ver_parser.add_argument("path", help="Path to the model directory")
-    ver_parser.add_argument("--manifest", required=True, help="Path to manifest.json")
-    ver_parser.add_argument("--format", choices=["text", "json"], default="text", help="Output format")
-    ver_parser.add_argument("--verify-sig", required=True, help="Path to public key for verifying the signature")
-    ver_parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
+    # --- Generate manifest command ---
+    generate_parser = subparsers.add_parser("generate", help="Generate a manifest.")
+    generate_parser.add_argument("--path", required=True, dest="directory", help="The root directory to scan.")
+    generate_parser.add_argument("--created-by", required=True, help="The name of the manifest creator.")
+    generate_parser.add_argument("--sign-key", required=True, dest="private_key_path", help="The path to the private key for signing.")
+    generate_parser.add_argument("--model-name", required=True, help="The name of the model or project.")
+    generate_parser.add_argument("--model-version", required=True, help="The version of the model or project.")
+    generate_parser.add_argument("--verbose", action="store_true", help="Enable verbose output.")
 
-    # Keys
-    keys_parser = subparsers.add_parser("keys", help="Key management commands")
-    keys_subparsers = keys_parser.add_subparsers(dest="keys_command", required=True)
-
-    keys_gen = keys_subparsers.add_parser("generate", help="Generate a new RSA key pair and add public key to trusted store")
-    keys_gen.add_argument("--name", required=True, help="Name of the key")
-    keys_gen.add_argument("--out-dir", required=True, help="Directory to write the key files")
+    # --- Verify manifest command ---
+    verify_parser = subparsers.add_parser("verify", help="Verify a manifest.")
+    verify_parser.add_argument("--manifest-file", required=True, help="The manifest file to verify.")
+    verify_parser.add_argument("--directory", default=".", help="The root directory of the project files to verify against.")
+    group = verify_parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--public-key", help="The public key to verify with.")
+    group.add_argument("--trusted-key", help="The name of the trusted key to use for verification.")
 
     args = parser.parse_args()
 
-    # Handle manifest generation
-    if args.command == "generate":
-        generate_manifest.run(
-            path=args.path,
+    # --- Command routing ---
+    if args.command == "keys":
+        generate_keys.generate_keys(args.name, args.out_dir)
+        print(f"Generated keys: {args.name}.pub and {args.name}.pem in {args.out_dir}")
+
+    elif args.command == "generate":
+        output_file = os.path.join(args.directory, "manifest.json")
+        generate_manifest.generate_manifest(
+            directory=args.directory,
+            output_file=output_file,
+            private_key_path=args.private_key_path,
             created_by=args.created_by,
-            out_file=args.out,
-            hf_id=args.hf_id,
-            mlflow_uri=args.mlflow_uri,
-            sign_key=args.sign_key,
             model_name=args.model_name,
             model_version=args.model_version,
             verbose=args.verbose
         )
+        print(f"\nSuccessfully generated manifest at: {output_file}")
 
-    # Handle manifest verification
     elif args.command == "verify":
-        verify_manifest.run(
-            path=args.path,
-            manifest_file=args.manifest,
-            output_format=args.format,
-            verify_sig=args.verify_sig,
-            verbose=args.verbose
-        )
-
-    # Handle RSA key generation
-    elif args.command == "keys":
-        if args.keys_command == "generate":
-            generate_keys.generate_key_pair(
-                name=args.name,
-                out_dir=args.out_dir
-            )
+        verify_manifest.verify_manifest(args.manifest_file, args.directory, args.public_key, args.trusted_key)
 
 if __name__ == "__main__":
     main()

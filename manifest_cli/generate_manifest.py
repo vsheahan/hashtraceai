@@ -1,98 +1,89 @@
-import os
+import argparse
 import json
+import os
 import hashlib
 import base64
-import getpass
-from datetime import datetime
-from cryptography.hazmat.primitives import hashes, serialization
+import datetime
+from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives import serialization
+from getpass import getpass
 
-def compute_file_hash(filepath):
-    with open(filepath, "rb") as f:
-        return hashlib.sha256(f.read()).hexdigest()
+def generate_manifest(directory, output_file, private_key_path, created_by, model_name, model_version, verbose):
+    """
+    Generates a manifest file for the specified directory with additional metadata
+    and ignores common unnecessary files.
+    """
+    if verbose:
+        print(f"Scanning directory: {directory}")
 
-def sign_data(sign_key, data):
-    with open(sign_key, "rb") as key_file:
-        key_bytes = key_file.read()
+    # --- Directories and files to ignore ---
+    ignore_dirs = {".git", "__pycache__", ".cache", "keys"}
+    ignore_files = {".DS_Store", "manifest.json"}
 
-    try:
-        private_key = serialization.load_pem_private_key(
-            key_bytes,
-            password=None,
-        )
-    except TypeError:
-        password = getpass.getpass("Enter password for private key: ").encode("utf-8")
-        private_key = serialization.load_pem_private_key(
-            key_bytes,
-            password=password,
-        )
-
-    message = json.dumps(data, sort_keys=True).encode("utf-8")
-    signature = private_key.sign(
-        message,
-        padding.PKCS1v15(),
-        hashes.SHA256(),
-    )
-    return base64.b64encode(signature).decode("utf-8")
-
-def run(
-    path,
-    created_by,
-    sign_key,
-    out_file=None,
-    model_name=None,
-    model_version=None,
-    hf_id=None,
-    mlflow_uri=None,
-    verbose=False
-):
-    file_hashes = {}
-    for root, _, files in os.walk(path):
-        for name in files:
-            if name.endswith(".pyc") or name.startswith(".") or "venv" in root:
-                continue
-            filepath = os.path.join(root, name)
-            rel_path = os.path.relpath(filepath, path)
-            file_hashes[rel_path] = {"SHA256": compute_file_hash(filepath)}
-
-    utc_timestamp = datetime.utcnow().isoformat() + "Z"
-    local_timestamp = datetime.now().isoformat()
-
-    signed_data = {
-        "created_by": created_by,
+    # Initialize the full manifest structure with all metadata
+    manifest = {
         "model_name": model_name,
         "model_version": model_version,
-        "timestamp": utc_timestamp,
-        "local_timestamp": local_timestamp,
-        "files": file_hashes,
+        "created_by": created_by,
+        "timestamp_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "timestamp_local": datetime.datetime.now().isoformat(),
+        "files": [],
+        "signature": None,
     }
 
-    if hf_id:
-        signed_data["hf_id"] = hf_id
-    if mlflow_uri:
-        signed_data["mlflow_uri"] = mlflow_uri
+    # Populate the file list
+    for root, dirs, files in os.walk(directory):
+        # Remove ignored directories from the walk
+        dirs[:] = [d for d in dirs if d not in ignore_dirs]
+        
+        for file in files:
+            if file in ignore_files:
+                continue
 
-    signature = sign_data(sign_key, signed_data)
+            file_path = os.path.join(root, file)
+            
+            if verbose:
+                print(f"  ...hashing {os.path.relpath(file_path, directory)}")
+                
+            with open(file_path, "rb") as f:
+                file_hash = hashlib.sha256(f.read()).hexdigest()
+                
+            manifest["files"].append({
+                "name": file,
+                "path": os.path.relpath(file_path, directory),
+                "sha256": file_hash,
+            })
 
-    manifest = {
-        "signature": signature,
-        "signed_data": signed_data,
-    }
+    # The data to be signed ONLY includes the file list for integrity
+    data_to_sign = {"files": manifest["files"]}
+    message = json.dumps(data_to_sign, sort_keys=True).encode()
 
-    if not out_file:
-        if model_name and model_version:
-            out_file = f"{model_name}_{model_version}_manifest.json"
-        else:
-            out_file = "manifest.json"
-
-    with open(out_file, "w") as f:
-        json.dump(manifest, f, indent=2)
-
-    sig_file = out_file + ".sig"
-    with open(sig_file, "w") as f:
-        f.write(signature)
-
+    # Sign the file list
     if verbose:
-        print(f"Manifest written to {out_file}")
-        print(f"Signature written to {sig_file}")
-        print(json.dumps(manifest, indent=2))
+        print("\nSigning the manifest...")
+    password = getpass("Enter password for private key: ")
+    with open(private_key_path, "rb") as key_file:
+        private_key = serialization.load_pem_private_key(
+            key_file.read(),
+            password=password.encode(),
+        )
+
+    signature = private_key.sign(
+        message,
+        padding.PSS(
+            mgf=padding.MGF1(hashes.SHA256()),
+            salt_length=padding.PSS.MAX_LENGTH
+        ),
+        hashes.SHA256()
+    )
+
+    # Add the final signature to the full manifest
+    manifest["signature"] = base64.b64encode(signature).decode()
+
+    # Write the complete manifest to the output file
+    with open(output_file, "w") as f:
+        json.dump(manifest, f, indent=4)
+        
+    if verbose:
+        print(f"Manifest generation complete.")
