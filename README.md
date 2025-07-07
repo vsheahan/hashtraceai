@@ -92,11 +92,11 @@ python3 cli.py verify --manifest-file your-model-dir/My\ Model_1.0_manifest.json
 | Scenario                              | Command                                                                                             | Purpose                                                                |
 |---------------------------------------|------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------|
 | Generate an encrypted key pair        | `python3 cli.py keys generate`                                                                       | Create a secure, password-protected key pair for signing.              |
-| Generate and sign a manifest          | `python3 cli.py generate ./model --created-by "<TARS>" --sign private.pem`                           | Prove authenticity with a digital signature, requires password.        |
+| Generate and sign a manifest          | `python3 cli.py generate ./model --created-by "<Your Name>" --sign private.pem`                           | Prove authenticity with a digital signature, requires password.        |
 | Verify files and signature            | `python3 cli.py verify ./model --manifest manifest.json --verify-sig public.pem`                       | Confirm that files are unchanged and the manifest is authentic.        |
-| Generate manifest (no signature)      | `python3 cli.py generate ./model --created-by "<TARS>" --out manifest.json`                           | Hash all files in model folder for basic integrity checks.             |
+| Generate manifest (no signature)      | `python3 cli.py generate ./model --created-by "<Your Name>" --out manifest.json`                           | Hash all files in model folder for basic integrity checks.             |
 | Verify files only (no signature)      | `python3 cli.py verify ./model --manifest manifest.json --format text`                              | Confirm no file drift or tampering without checking authenticity.      |
-| Generate manifest from Hugging Face   | `python3 cli.py generate --hf-id "bert-base-uncased" --created-by "<TARS>" --out manifest.json`       | Securely ingest and verify third-party model files.                    |
+| Generate manifest from Hugging Face   | `python3 cli.py generate --hf-id "bert-base-uncased" --created-by "<Your Name>" --out manifest.json`       | Securely ingest and verify third-party model files.                    |
 ## Hugging Face Downloader
 
 You can also download a model from the Hugging Face Hub and generate a manifest for it in one command:
