@@ -77,9 +77,7 @@ Next, generate a manifest for your model. The --sign flag will use your private 
 ```bash
 python3 cli.py generate --path ./your-model-dir --created-by "Your Name" --model-name "My Model" --model-version "1.0" --sign-key keys/my_key.pem
 ```
-This command creates two files:
-manifest.json: The list of files and their hashes.
-manifest.json.sig: The digital signature for manifest.json.
+This command creates a single manifest file (e.g., `My Model_1.0_manifest.json`) that includes the file list, their hashes, and the digital signature.
 
 ### 3. Verify the Manifest and its Signature
 
