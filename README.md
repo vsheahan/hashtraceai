@@ -66,7 +66,7 @@ First, create a password-protected private key and a corresponding public key. T
 You will be prompted to create and confirm a password for the private key.
 
 ```bash
-python3 cli.py keys generate --priv private_key.pem --pub public_key.pem
+python3 cli.py keys --name my_key --out-dir keys
 ```
 Keep your private_key.pem file and its password secret! The public_key.pem can be distributed freely.
 
@@ -75,7 +75,7 @@ Keep your private_key.pem file and its password secret! The public_key.pem can b
 Next, generate a manifest for your model. The --sign flag will use your private key to create a digital signature. You will be prompted for the password you created in Step 1.
 
 ```bash
-python3 cli.py generate ./your-model-dir --created-by "<TARS>" --sign private_key.pem
+python3 cli.py generate --path ./your-model-dir --created-by "Your Name" --model-name "My Model" --model-version "1.0" --sign-key keys/my_key.pem
 ```
 This command creates two files:
 manifest.json: The list of files and their hashes.
@@ -86,7 +86,7 @@ manifest.json.sig: The digital signature for manifest.json.
 Finally, anyone with the public key can verify the integrity of the model files and the authenticity of the manifest. This command checks both that the files haven't changed and that the signature is valid.
 
 ```bash
-python3 cli.py verify ./your-model-dir --manifest manifest.json --verify-sig public_key.pem
+python3 cli.py verify --manifest-file your-model-dir/My\ Model_1.0_manifest.json --public-key keys/my_key.pub
 ```
 
 ### Use Case Examples
@@ -99,8 +99,15 @@ python3 cli.py verify ./your-model-dir --manifest manifest.json --verify-sig pub
 | Generate manifest (no signature)      | `python3 cli.py generate ./model --created-by "<TARS>" --out manifest.json`                           | Hash all files in model folder for basic integrity checks.             |
 | Verify files only (no signature)      | `python3 cli.py verify ./model --manifest manifest.json --format text`                              | Confirm no file drift or tampering without checking authenticity.      |
 | Generate manifest from Hugging Face   | `python3 cli.py generate --hf-id "bert-base-uncased" --created-by "<TARS>" --out manifest.json`       | Securely ingest and verify third-party model files.                    |
-| Generate manifest from MLflow         | `python3 cli.py generate --mlflow-uri "runs:/<RUN_ID>/model" --created-by "<TARS>" --out manifest.json`| Trace artifacts from internal model tracking systems.                  |
-| JSON output for CI/CD integration     | `python3 cli.py verify ./model --manifest manifest.json --format json`                              | Get structured log output for automation.                              |
+## Hugging Face Downloader
+
+You can also download a model from the Hugging Face Hub and generate a manifest for it in one command:
+
+```bash
+python3 hf_downloader.py --model-id "distilbert-base-uncased" --created-by "Your Name" --sign-key keys/my_key.pem --model-version "1.0"
+| JSON output for CI/CD integration     | `python3 cli.py verify ./model --manifest manifest.json --format json`                              | Get structured log output for automation.      
+
+This will download the specified model, and then use the cli.py tool to generate a manifest for it.                        |
 
 ## Requirements
 
@@ -116,15 +123,24 @@ The generated manifest is a JSON file with the following structure:
 
 ```json
 {
-  "version": "1.0",
-  "created": "2025-07-05T00:30:30.152256Z",
-  "created_by": "<TARS>",
-  "files": [
-    {
-      "path": "model.pt",
-      "sha256": "a1fff0ffefb9eace7230c24e50731f0a91c62f9cefdfe77121c2f607125dffae"
-    }
-  ]
+    "model_name": "My Model",
+    "model_version": "1.0",
+    "created_by": "Your Name",
+    "timestamp_utc": "2025-07-06T23:50:00.123456+00:00",
+    "timestamp_local": "2025-07-06T19:50:00.123456",
+    "files": [
+        {
+            "name": "file1.txt",
+            "path": "file1.txt",
+            "sha256": "..."
+        },
+        {
+            "name": "image.png",
+            "path": "data/image.png",
+            "sha256": "..."
+        }
+    ],
+    "signature": "..."
 }
 ```
 
