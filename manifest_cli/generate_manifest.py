@@ -17,11 +17,9 @@ def generate_manifest(directory, output_file, private_key_path, created_by, mode
     if verbose:
         print(f"Scanning directory: {directory}")
 
-    # --- Directories and files to ignore ---
     ignore_dirs = {".git", "__pycache__", ".cache", "keys"}
-    ignore_files = {".DS_Store"} # Removed "manifest.json"
+    ignore_files = {".DS_Store"}
 
-    # Initialize the full manifest structure
     manifest = {
         "model_name": model_name,
         "model_version": model_version,
@@ -32,13 +30,11 @@ def generate_manifest(directory, output_file, private_key_path, created_by, mode
         "signature": None,
     }
 
-    # Populate the file list
     for root, dirs, files in os.walk(directory):
         dirs[:] = [d for d in dirs if d not in ignore_dirs]
         
         for file in files:
             file_path = os.path.abspath(os.path.join(root, file))
-            # Skip the manifest file itself and other ignored files
             if os.path.basename(file_path) in ignore_files or file_path == os.path.abspath(output_file):
                 continue
             
@@ -77,6 +73,9 @@ def generate_manifest(directory, output_file, private_key_path, created_by, mode
 
     manifest["signature"] = base64.b64encode(signature).decode()
 
+    # --- FIX: Ensure the output directory exists before writing the file ---
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+    
     with open(output_file, "w") as f:
         json.dump(manifest, f, indent=4)
         
