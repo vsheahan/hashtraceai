@@ -12,3 +12,4 @@ manifest.json
 manifest.json.sig
 mflow_test.py
 keys/
+trusted_keys.json

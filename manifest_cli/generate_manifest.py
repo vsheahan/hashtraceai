@@ -19,9 +19,9 @@ def generate_manifest(directory, output_file, private_key_path, created_by, mode
 
     # --- Directories and files to ignore ---
     ignore_dirs = {".git", "__pycache__", ".cache", "keys"}
-    ignore_files = {".DS_Store", "manifest.json"}
+    ignore_files = {".DS_Store"} # Removed "manifest.json"
 
-    # Initialize the full manifest structure with all metadata
+    # Initialize the full manifest structure
     manifest = {
         "model_name": model_name,
         "model_version": model_version,
@@ -34,14 +34,13 @@ def generate_manifest(directory, output_file, private_key_path, created_by, mode
 
     # Populate the file list
     for root, dirs, files in os.walk(directory):
-        # Remove ignored directories from the walk
         dirs[:] = [d for d in dirs if d not in ignore_dirs]
         
         for file in files:
-            if file in ignore_files:
+            file_path = os.path.abspath(os.path.join(root, file))
+            # Skip the manifest file itself and other ignored files
+            if os.path.basename(file_path) in ignore_files or file_path == os.path.abspath(output_file):
                 continue
-
-            file_path = os.path.join(root, file)
             
             if verbose:
                 print(f"  ...hashing {os.path.relpath(file_path, directory)}")
@@ -55,11 +54,9 @@ def generate_manifest(directory, output_file, private_key_path, created_by, mode
                 "sha256": file_hash,
             })
 
-    # The data to be signed ONLY includes the file list for integrity
     data_to_sign = {"files": manifest["files"]}
     message = json.dumps(data_to_sign, sort_keys=True).encode()
 
-    # Sign the file list
     if verbose:
         print("\nSigning the manifest...")
     password = getpass("Enter password for private key: ")
@@ -78,10 +75,8 @@ def generate_manifest(directory, output_file, private_key_path, created_by, mode
         hashes.SHA256()
     )
 
-    # Add the final signature to the full manifest
     manifest["signature"] = base64.b64encode(signature).decode()
 
-    # Write the complete manifest to the output file
     with open(output_file, "w") as f:
         json.dump(manifest, f, indent=4)
         

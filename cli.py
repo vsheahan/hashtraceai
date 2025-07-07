@@ -36,7 +36,10 @@ def main():
         print(f"Generated keys: {args.name}.pub and {args.name}.pem in {args.out_dir}")
 
     elif args.command == "generate":
-        output_file = os.path.join(args.directory, "manifest.json")
+        # --- NEW: Construct dynamic filename ---
+        filename = f"{args.model_name}_{args.model_version}_manifest.json"
+        output_file = os.path.join(args.directory, filename)
+        
         generate_manifest.generate_manifest(
             directory=args.directory,
             output_file=output_file,
