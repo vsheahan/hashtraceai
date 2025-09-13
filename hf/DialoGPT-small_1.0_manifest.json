@@ -1,0 +1,75 @@
+{
+    "model_name": "DialoGPT-small",
+    "model_version": "1.0",
+    "created_by": "Test User",
+    "timestamp_utc": "2025-09-13T11:05:44.073533+00:00",
+    "timestamp_local": "2025-09-13T07:05:44.073539",
+    "files": [
+        {
+            "name": "model.safetensors",
+            "path": "model.safetensors",
+            "sha256": "ea50e39b0e9368b9110cc5ab48012ddbc7bd90f2b17410aed643a7404acac567"
+        },
+        {
+            "name": "tokenizer_config.json",
+            "path": "tokenizer_config.json",
+            "sha256": "24a5d96785e2a90a051ff80a62acb3a1c9267ff2124f689911d671a6f90bca28"
+        },
+        {
+            "name": "config.json",
+            "path": "config.json",
+            "sha256": "b176718354910f9839f68da96eaf2fce4b561655cac18dade5165b4b45e02a3e"
+        },
+        {
+            "name": "generation_config_for_conversational.json",
+            "path": "generation_config_for_conversational.json",
+            "sha256": "129edde4794aaaef5684666887539c336fa3b90e45ed57b96d0d67802aff61d7"
+        },
+        {
+            "name": "generation_config.json",
+            "path": "generation_config.json",
+            "sha256": "b90eadacf585a743a30ea51e8b5c88b8d282a2a34dc0c7e556d0987cdbd68805"
+        },
+        {
+            "name": "README.md",
+            "path": "README.md",
+            "sha256": "daff057eee3a323d104efc6cc9e3bb6608b10baf8c3ce65d4a2f4c92bd0f3aa9"
+        },
+        {
+            "name": "merges.txt",
+            "path": "merges.txt",
+            "sha256": "1ce1664773c50f3e0cc8842619a93edc4624525b728b188a9e0be33b7726adc5"
+        },
+        {
+            "name": ".gitattributes",
+            "path": ".gitattributes",
+            "sha256": "98c91dabef4df27b2fc7c8454d220aba47476f73593cbd034d961fe4927304c1"
+        },
+        {
+            "name": "pytorch_model.bin",
+            "path": "pytorch_model.bin",
+            "sha256": "e6e2be6d12f77bf925a89f2381c6c685f4739752289039d590622d37d48a153d"
+        },
+        {
+            "name": "DialoGPT-small_1.0_manifest.json",
+            "path": "DialoGPT-small_1.0_manifest.json",
+            "sha256": "d7244f69d0c6048de1c9f62038c8989fa84dc56b4d570b5fe60700139314a840"
+        },
+        {
+            "name": "vocab.json",
+            "path": "vocab.json",
+            "sha256": "196139668be63f3b5d6574427317ae82f612a97c5d1cdaf36ed2256dbf636783"
+        },
+        {
+            "name": "tf_model.h5",
+            "path": "tf_model.h5",
+            "sha256": "86fa1f394a285e12ac73160d5814a43b3e40732e25ed7ef1bcfe65064a0a74d2"
+        },
+        {
+            "name": "flax_model.msgpack",
+            "path": "flax_model.msgpack",
+            "sha256": "3e6bb6354fa5f466f8bb7a84c2f7d3f1c3e357609cb906be4d6280378f805194"
+        }
+    ],
+    "signature": "mNcCWUne/w/76Lep1QI/hXY5sE2mV54QPqgHMl7HEf5jSgKfQVWo224FdUi9hkVzbUMaT8EAXcLIIcuehT5wD2CBf8XU7AE7oudFhoCFV3mH92PiI3nThdqZnW4G0X/lYVQZozLJ/hXiGGgbITg/6TNDodAmucnLrp6FwiyGHfB0OHKwLX14veFNNC8a9Erwr33IuBLdFbEMW4A0uOaQcvBUypMddA/P1nu/Eq6WlT3MfxO1/cP5jLMvFp0gQEPRBqHgbVMYEDPAmtlqON/ZElsXONQw8geRCV9IyeZ7D5Z84/1ecBBirN8ApXOcaR0jIU7NFUNXf5UUqEGycR4UkQ=="
+}

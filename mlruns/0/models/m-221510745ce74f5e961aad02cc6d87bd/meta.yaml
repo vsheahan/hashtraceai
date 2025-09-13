@@ -1,0 +1,10 @@
+artifact_location: file:///Users/vincentsheahan/hashtraceai/mlruns/0/models/m-221510745ce74f5e961aad02cc6d87bd/artifacts
+creation_timestamp: 1757762908018
+experiment_id: '0'
+last_updated_timestamp: 1757762909676
+model_id: m-221510745ce74f5e961aad02cc6d87bd
+model_type: null
+name: random_forest_model
+source_run_id: 8b4597bc16ea41d6b02ffa81b2e5ef94
+status: 2
+status_message: null

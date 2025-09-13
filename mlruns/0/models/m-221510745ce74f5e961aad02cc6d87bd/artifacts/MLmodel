@@ -1,0 +1,22 @@
+artifact_path: file:///Users/vincentsheahan/hashtraceai/mlruns/0/models/m-221510745ce74f5e961aad02cc6d87bd/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.12.1
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.7.0
+mlflow_version: 3.1.1
+model_id: m-221510745ce74f5e961aad02cc6d87bd
+model_size_bytes: 1905947
+model_uuid: m-221510745ce74f5e961aad02cc6d87bd
+prompts: null
+run_id: 8b4597bc16ea41d6b02ffa81b2e5ef94
+utc_time_created: '2025-09-13 11:28:28.024069'
