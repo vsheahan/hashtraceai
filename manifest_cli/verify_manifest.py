@@ -1,4 +1,3 @@
-import argparse
 import json
 import os
 import hashlib
@@ -20,7 +19,10 @@ def get_key_from_trusted(key_name):
             return serialization.load_pem_public_key(key["key"].encode())
     return None
 
-def verify_manifest(manifest_file, directory, public_key_path=None, trusted_key_name=None):
+
+def verify_manifest(
+    manifest_file, directory, public_key_path=None, trusted_key_name=None
+):
     """
     Verifies the integrity of the files listed in the manifest.
     """
@@ -50,25 +52,26 @@ def verify_manifest(manifest_file, directory, public_key_path=None, trusted_key_
             signature,
             message,
             padding.PSS(
-                mgf=padding.MGF1(hashes.SHA256()),
-                salt_length=padding.PSS.MAX_LENGTH
+                mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH
             ),
-            hashes.SHA256()
+            hashes.SHA256(),
         )
         print("Signature is valid.")
     except InvalidSignature:
         print("Signature is invalid.")
         return
     except KeyError:
-        print("Manifest is missing required fields (files or signature). Cannot verify.")
+        print(
+            "Manifest is missing required fields (files or signature). Cannot verify."
+        )
         return
 
     # --- Verify file hashes ---
     all_good = True
     # ANSI color codes
-    GREEN = '\033[92m'
-    RED = '\033[91m'
-    RESET = '\033[0m'
+    GREEN = "\033[92m"
+    RED = "\033[91m"
+    RESET = "\033[0m"
 
     print("--- Verifying File Integrity ---")
     for file_info in manifest["files"]:
@@ -91,6 +94,6 @@ def verify_manifest(manifest_file, directory, public_key_path=None, trusted_key_
         else:
             print(f"{RED}FAIL: {file_info['path']} (file not found){RESET}")
             all_good = False
-            
+
     if all_good:
         print(f"\n{GREEN}All file hashes are valid.{RESET}")

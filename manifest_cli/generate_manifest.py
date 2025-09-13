@@ -1,4 +1,3 @@
-import argparse
 import json
 import os
 import hashlib
@@ -9,7 +8,16 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import serialization
 from getpass import getpass
 
-def generate_manifest(directory, output_file, private_key_path, created_by, model_name, model_version, verbose):
+
+def generate_manifest(
+    directory,
+    output_file,
+    private_key_path,
+    created_by,
+    model_name,
+    model_version,
+    verbose,
+):
     """
     Generates a manifest file for the specified directory with additional metadata
     and ignores common unnecessary files.
@@ -32,23 +40,27 @@ def generate_manifest(directory, output_file, private_key_path, created_by, mode
 
     for root, dirs, files in os.walk(directory):
         dirs[:] = [d for d in dirs if d not in ignore_dirs]
-        
+
         for file in files:
             file_path = os.path.abspath(os.path.join(root, file))
-            if os.path.basename(file_path) in ignore_files or file_path == os.path.abspath(output_file):
+            if os.path.basename(
+                file_path
+            ) in ignore_files or file_path == os.path.abspath(output_file):
                 continue
-            
+
             if verbose:
                 print(f"  ...hashing {os.path.relpath(file_path, directory)}")
-                
+
             with open(file_path, "rb") as f:
                 file_hash = hashlib.sha256(f.read()).hexdigest()
-                
-            manifest["files"].append({
-                "name": file,
-                "path": os.path.relpath(file_path, directory),
-                "sha256": file_hash,
-            })
+
+            manifest["files"].append(
+                {
+                    "name": file,
+                    "path": os.path.relpath(file_path, directory),
+                    "sha256": file_hash,
+                }
+            )
 
     data_to_sign = {"files": manifest["files"]}
     message = json.dumps(data_to_sign, sort_keys=True).encode()
@@ -65,19 +77,18 @@ def generate_manifest(directory, output_file, private_key_path, created_by, mode
     signature = private_key.sign(
         message,
         padding.PSS(
-            mgf=padding.MGF1(hashes.SHA256()),
-            salt_length=padding.PSS.MAX_LENGTH
+            mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH
         ),
-        hashes.SHA256()
+        hashes.SHA256(),
     )
 
     manifest["signature"] = base64.b64encode(signature).decode()
 
     # --- FIX: Ensure the output directory exists before writing the file ---
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
-    
+
     with open(output_file, "w") as f:
         json.dump(manifest, f, indent=4)
-        
+
     if verbose:
-        print(f"Manifest generation complete.")
+        print("Manifest generation complete.")

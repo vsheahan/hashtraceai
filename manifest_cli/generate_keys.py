@@ -5,6 +5,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
 from getpass import getpass
 
+
 def generate_keys(name, out_dir):
     """
     Generates a new RSA key pair and saves them to the specified directory.
@@ -46,27 +47,22 @@ def generate_keys(name, out_dir):
     else:
         trusted_keys = {"keys": []}
 
-    trusted_keys["keys"].append({
-        "name": name,
-        "key": pem.decode(),
-    })
+    trusted_keys["keys"].append(
+        {
+            "name": name,
+            "key": pem.decode(),
+        }
+    )
 
     with open(trusted_keys_file, "w") as f:
         json.dump(trusted_keys, f, indent=4)
 
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Generate a new key pair."
-    )
+    parser = argparse.ArgumentParser(description="Generate a new key pair.")
+    parser.add_argument("--name", required=True, help="The name for the key pair.")
     parser.add_argument(
-        "--name",
-        required=True,
-        help="The name for the key pair."
-    )
-    parser.add_argument(
-        "--out-dir",
-        default=".",
-        help="The directory to save the keys to."
+        "--out-dir", default=".", help="The directory to save the keys to."
     )
     args = parser.parse_args()
 
