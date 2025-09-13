@@ -9,6 +9,8 @@ def generate_keys(name, out_dir):
     """
     Generates a new RSA key pair and saves them to the specified directory.
     """
+    os.makedirs(out_dir, exist_ok=True)
+
     private_key = rsa.generate_private_key(
         public_exponent=65537,
         key_size=2048,

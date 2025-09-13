@@ -22,25 +22,30 @@ def download_and_generate_manifest(model_id, created_by, sign_key, model_version
         # Extract the model name from the model_id (e.g., "distilbert-base-uncased")
         model_name = model_id.split('/')[-1]
 
-        # 3. Call the cli.py 'generate' command using subprocess
-        print(f"--- Generating manifest for {model_name} ---")
-        command = [
-            "python3",
-            "cli.py",
-            "generate",
-            "--path", model_path,
-            "--created-by", created_by,
-            "--sign-key", sign_key_path,
-            "--model-name", model_name,
-            "--model-version", model_version,
-        ]
-        
-        # Add the --verbose flag if requested
-        if verbose:
-            command.append("--verbose")
+        # Create local hf directory for storing manifests
+        hf_dir = "hf"
+        os.makedirs(hf_dir, exist_ok=True)
 
-        # Run the command
-        subprocess.run(command, check=True)
+        # 3. Generate manifest directly using the manifest module
+        print(f"--- Generating manifest for {model_name} ---")
+        from manifest_cli.generate_manifest import generate_manifest
+
+        # Create manifest filename and save to local hf directory
+        manifest_filename = f"{model_name}_{model_version}_manifest.json"
+        manifest_path = os.path.join(hf_dir, manifest_filename)
+
+        generate_manifest(
+            directory=model_path,
+            output_file=manifest_path,
+            private_key_path=sign_key_path,
+            created_by=created_by,
+            model_name=model_name,
+            model_version=model_version,
+            verbose=verbose
+        )
+
+        print(f"\nSuccessfully generated manifest at: {manifest_path}")
+        print(f"To verify: python3 cli.py verify --manifest-file {manifest_path} --directory {model_path} --public-key {sign_key_path.replace('.pem', '.pub')}")
 
     except Exception as e:
         print(f"An error occurred: {e}")

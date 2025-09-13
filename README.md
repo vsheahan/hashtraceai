@@ -91,21 +91,49 @@ python3 cli.py verify --manifest-file your-model-dir/My\ Model_1.0_manifest.json
 
 | Scenario                              | Command                                                                                             | Purpose                                                                |
 |---------------------------------------|------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------|
-| Generate an encrypted key pair        | `python3 cli.py keys generate`                                                                       | Create a secure, password-protected key pair for signing.              |
-| Generate and sign a manifest          | `python3 cli.py generate ./model --created-by "<Your Name>" --sign private.pem`                           | Prove authenticity with a digital signature, requires password.        |
-| Verify files and signature            | `python3 cli.py verify ./model --manifest manifest.json --verify-sig public.pem`                       | Confirm that files are unchanged and the manifest is authentic.        |
-| Generate manifest (no signature)      | `python3 cli.py generate ./model --created-by "<Your Name>" --out manifest.json`                           | Hash all files in model folder for basic integrity checks.             |
-| Verify files only (no signature)      | `python3 cli.py verify ./model --manifest manifest.json --format text`                              | Confirm no file drift or tampering without checking authenticity.      |
-| Generate manifest from Hugging Face   | `python3 cli.py generate --hf-id "bert-base-uncased" --created-by "<Your Name>" --out manifest.json`       | Securely ingest and verify third-party model files.                    |
+| Generate an encrypted key pair        | `python3 cli.py keys --name my_key --out-dir keys`                                                  | Create a secure, password-protected key pair for signing.              |
+| Generate and sign a manifest          | `python3 cli.py generate --path ./model --created-by "Your Name" --sign-key keys/my_key.pem --model-name "MyModel" --model-version "1.0"` | Prove authenticity with a digital signature, requires password.        |
+| Verify files and signature            | `python3 cli.py verify --manifest-file manifest.json --directory ./model --public-key keys/my_key.pub` | Confirm that files are unchanged and the manifest is authentic.        |
+| Download from Hugging Face            | `python3 hf_downloader.py --model-id "distilbert-base-uncased" --created-by "Your Name" --sign-key keys/my_key.pem` | Download HF model and generate signed manifest in local hf/ directory. |
+| Generate manifest for MLflow model    | `python3 cli.py generate --path mlruns/0/[run_id]/artifacts/model --created-by "Your Name" --sign-key keys/my_key.pem --model-name "MLflowModel" --model-version "1.0"` | Hash MLflow model artifacts and create signed manifest.                |
+| JSON output for CI/CD integration     | `python3 cli.py verify --manifest-file manifest.json --directory ./model --public-key keys/my_key.pub --format json` | Get structured log output for automation.                              |
 ## Hugging Face Downloader
 
-You can also download a model from the Hugging Face Hub and generate a manifest for it in one command:
+You can download a model from the Hugging Face Hub and generate a signed manifest for it in one command:
 
 ```bash
 python3 hf_downloader.py --model-id "distilbert-base-uncased" --created-by "Your Name" --sign-key keys/my_key.pem --model-version "1.0"
-| JSON output for CI/CD integration     | `python3 cli.py verify ./model --manifest manifest.json --format json`                              | Get structured log output for automation.      
+```
 
-This will download the specified model, and then use the cli.py tool to generate a manifest for it.                        |
+This command will:
+1. Download the specified model from Hugging Face Hub (stored in cache)
+2. Generate a signed manifest with SHA-256 hashes of all model files
+3. Save the manifest in the local `hf/` directory for easy access
+4. Provide the exact verification command for testing
+
+The manifest will be saved as `hf/[model-name]_[version]_manifest.json` in your project directory.
+
+## MLflow Integration
+
+HashTraceAI supports MLflow model artifacts. Generate manifests for MLflow models using:
+
+```bash
+# For models in mlruns directory
+python3 cli.py generate \
+  --path mlruns/0/[run_id]/artifacts/[model_name] \
+  --created-by "Your Name" \
+  --sign-key keys/my_key.pem \
+  --model-name "MLflowModel" \
+  --model-version "1.0"
+
+# For models in MLflow cache
+python3 cli.py generate \
+  --path .cache/hashtraceai/mlflow/[model_hash] \
+  --created-by "Your Name" \
+  --sign-key keys/my_key.pem \
+  --model-name "CachedMLflowModel" \
+  --model-version "1.0"
+```
 
 ## Requirements
 
