@@ -13,3 +13,10 @@ manifest.json.sig
 mflow_test.py
 keys/
 trusted_keys.json
+
+mlruns/
+models/
+*.npy
+*.pkl
+
+hf/*.json
